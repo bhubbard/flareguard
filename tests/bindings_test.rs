@@ -1,13 +1,14 @@
 use flareguard::bindings::reporter::render_report;
 use flareguard::bindings::types::OutputFormat;
-use flareguard::bindings::validator::{validate_project, ValidatorOptions};
+use flareguard::bindings::validator::{ValidatorOptions, validate_project};
 use flareguard::bindings::wrangler::parse_wrangler_config;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
 
 fn create_temp_test_project(test_name: &str) -> PathBuf {
-    let base_dir = std::env::temp_dir().join(format!("cf_test_{}_{}", test_name, std::process::id()));
+    let base_dir =
+        std::env::temp_dir().join(format!("cf_test_{}_{}", test_name, std::process::id()));
     if base_dir.exists() {
         let _ = fs::remove_dir_all(&base_dir);
     }
@@ -83,9 +84,21 @@ fn test_integration_full_valid_project() {
     let report = validate_project(Some(&wrangler_config), &options).unwrap();
 
     assert!(report.is_success, "Expected validation to succeed");
-    assert_eq!(report.undeclared_accesses.len(), 0, "No undeclared bindings should exist");
-    assert_eq!(report.ghost_bindings.len(), 0, "No ghost bindings should exist");
-    assert_eq!(report.valid_bindings.len(), 7, "All 7 declared bindings should be matched");
+    assert_eq!(
+        report.undeclared_accesses.len(),
+        0,
+        "No undeclared bindings should exist"
+    );
+    assert_eq!(
+        report.ghost_bindings.len(),
+        0,
+        "No ghost bindings should exist"
+    );
+    assert_eq!(
+        report.valid_bindings.len(),
+        7,
+        "All 7 declared bindings should be matched"
+    );
 
     // Clean up
     let _ = fs::remove_dir_all(&temp_dir);
@@ -136,10 +149,17 @@ fn test_integration_undeclared_bindings_error() {
 
     let report = validate_project(Some(&wrangler_config), &options).unwrap();
 
-    assert!(!report.is_success, "Expected validation to fail due to undeclared bindings");
+    assert!(
+        !report.is_success,
+        "Expected validation to fail due to undeclared bindings"
+    );
     assert_eq!(report.undeclared_accesses.len(), 2);
 
-    let undeclared_names: Vec<&str> = report.undeclared_accesses.iter().map(|a| a.name.as_str()).collect();
+    let undeclared_names: Vec<&str> = report
+        .undeclared_accesses
+        .iter()
+        .map(|a| a.name.as_str())
+        .collect();
     assert!(undeclared_names.contains(&"MISSING_KV"));
     assert!(undeclared_names.contains(&"NON_EXISTENT_DB"));
 
@@ -193,10 +213,17 @@ fn test_integration_ghost_bindings_warning() {
     };
 
     let report = validate_project(Some(&wrangler_config), &options).unwrap();
-    assert!(report.is_success, "Default mode succeeds despite ghost warnings");
+    assert!(
+        report.is_success,
+        "Default mode succeeds despite ghost warnings"
+    );
     assert_eq!(report.ghost_bindings.len(), 3);
 
-    let ghost_names: Vec<&str> = report.ghost_bindings.iter().map(|b| b.name.as_str()).collect();
+    let ghost_names: Vec<&str> = report
+        .ghost_bindings
+        .iter()
+        .map(|b| b.name.as_str())
+        .collect();
     assert!(ghost_names.contains(&"GHOST_VAR_1"));
     assert!(ghost_names.contains(&"GHOST_VAR_2"));
     assert!(ghost_names.contains(&"GHOST_KV"));
@@ -211,7 +238,10 @@ fn test_integration_ghost_bindings_warning() {
     };
 
     let strict_report = validate_project(Some(&wrangler_config), &strict_options).unwrap();
-    assert!(!strict_report.is_success, "Strict mode must fail when ghost bindings exist");
+    assert!(
+        !strict_report.is_success,
+        "Strict mode must fail when ghost bindings exist"
+    );
 
     // Clean up
     let _ = fs::remove_dir_all(&temp_dir);

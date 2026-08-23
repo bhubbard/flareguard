@@ -1,5 +1,5 @@
-use regex::Regex;
 use crate::secrets::rules::types::{Rule, Severity};
+use regex::Regex;
 
 /// Returns all built-in security rules for Cloudflare secret detection.
 pub fn get_builtin_rules() -> Vec<Rule> {

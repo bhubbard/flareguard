@@ -1,12 +1,14 @@
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
+use clap_complete::generate;
 use colored::Colorize;
 use std::collections::HashSet;
 use std::fs;
+use std::io;
 use std::path::PathBuf;
 use std::process::exit;
 
-use flareguard::cli::{Cli, Commands};
+use flareguard::cli::{CheckArgs, CheckOutputFormat, Cli, Commands};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -28,6 +30,11 @@ async fn main() -> Result<()> {
         Commands::Check(args) => {
             run_check_command(args).await?;
         }
+        Commands::Completions { shell } => {
+            let mut cmd = Cli::command();
+            let bin_name = cmd.get_name().to_string();
+            generate(shell, &mut cmd, bin_name, &mut io::stdout());
+        }
     }
 
     Ok(())
@@ -37,7 +44,9 @@ async fn run_secrets_command(cli: flareguard::secrets::cli::Cli) -> Result<()> {
     if cli.list_rules {
         let rules = flareguard::secrets::rules::builtin::get_builtin_rules();
         println!("\n{}", "flareguard Built-in Secret Detection Rules:".bold());
-        println!("================================================================================");
+        println!(
+            "================================================================================"
+        );
         for rule in rules {
             println!(
                 "• [{}] {} (Severity: {})",
@@ -85,14 +94,18 @@ async fn run_secrets_command(cli: flareguard::secrets::cli::Cli) -> Result<()> {
         let env_files = flareguard::secrets::env_parser::discover_env_files(&[current_dir]);
         for f in env_files {
             if let Ok(parsed) = flareguard::secrets::env_parser::parse_env_file(&f) {
-                rules.extend(flareguard::secrets::env_parser::env_secrets_to_rules(&parsed));
+                rules.extend(flareguard::secrets::env_parser::env_secrets_to_rules(
+                    &parsed,
+                ));
             }
         }
     }
 
     for env_path in &cli.env_files {
         if let Ok(parsed) = flareguard::secrets::env_parser::parse_env_file(env_path) {
-            rules.extend(flareguard::secrets::env_parser::env_secrets_to_rules(&parsed));
+            rules.extend(flareguard::secrets::env_parser::env_secrets_to_rules(
+                &parsed,
+            ));
         }
     }
 
@@ -102,7 +115,8 @@ async fn run_secrets_command(cli: flareguard::secrets::cli::Cli) -> Result<()> {
         follow_symlinks: false,
     };
 
-    let result = flareguard::secrets::scanner::scan_targets(&target_paths, &rules, &ignore_filter, &options);
+    let result =
+        flareguard::secrets::scanner::scan_targets(&target_paths, &rules, &ignore_filter, &options);
 
     let rendered = flareguard::secrets::report::render_report(
         cli.format,
@@ -110,14 +124,21 @@ async fn run_secrets_command(cli: flareguard::secrets::cli::Cli) -> Result<()> {
         &rules,
         env!("CARGO_PKG_VERSION"),
         cli.verbose,
-    ).map_err(|e| anyhow::anyhow!("Error rendering report: {}", e))?;
+    )
+    .map_err(|e| anyhow::anyhow!("Error rendering report: {}", e))?;
 
     if let Some(ref out_path) = cli.output {
         fs::write(out_path, &rendered)?;
         if !cli.quiet {
-            println!("Report successfully written to {}", out_path.display().to_string().cyan());
+            println!(
+                "Report successfully written to {}",
+                out_path.display().to_string().cyan()
+            );
         }
-    } else if !cli.quiet || !result.findings.is_empty() || cli.format != flareguard::secrets::report::OutputFormat::Text {
+    } else if !cli.quiet
+        || !result.findings.is_empty()
+        || cli.format != flareguard::secrets::report::OutputFormat::Text
+    {
         println!("{}", rendered);
     }
 
@@ -131,12 +152,19 @@ async fn run_secrets_command(cli: flareguard::secrets::cli::Cli) -> Result<()> {
 fn run_bindings_command(args: flareguard::bindings::cli::CliArgs) -> Result<()> {
     let config_path = if let Some(path) = args.config.clone() {
         if !path.exists() {
-            eprintln!("Error: Wrangler config file not found at: {}", path.display());
+            eprintln!(
+                "Error: Wrangler config file not found at: {}",
+                path.display()
+            );
             exit(1);
         }
         Some(path)
     } else {
-        let search_dir = args.paths.first().cloned().unwrap_or_else(|| PathBuf::from("."));
+        let search_dir = args
+            .paths
+            .first()
+            .cloned()
+            .unwrap_or_else(|| PathBuf::from("."));
         flareguard::bindings::wrangler::find_wrangler_config(&search_dir)
     };
 
@@ -144,7 +172,11 @@ fn run_bindings_command(args: flareguard::bindings::cli::CliArgs) -> Result<()> 
         Some(ref path) => match flareguard::bindings::wrangler::parse_wrangler_config(path) {
             Ok(cfg) => Some(cfg),
             Err(e) => {
-                eprintln!("Error parsing wrangler configuration ({}): {}", path.display(), e);
+                eprintln!(
+                    "Error parsing wrangler configuration ({}): {}",
+                    path.display(),
+                    e
+                );
                 exit(1);
             }
         },
@@ -159,18 +191,26 @@ fn run_bindings_command(args: flareguard::bindings::cli::CliArgs) -> Result<()> 
         strict: args.strict,
     };
 
-    let report = match flareguard::bindings::validator::validate_project(wrangler_config.as_ref(), &options) {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("Validation error: {}", e);
-            exit(1);
-        }
-    };
+    let report =
+        match flareguard::bindings::validator::validate_project(wrangler_config.as_ref(), &options)
+        {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("Validation error: {}", e);
+                exit(1);
+            }
+        };
 
     let format = match args.format {
-        flareguard::bindings::cli::CliFormat::Text => flareguard::bindings::types::OutputFormat::Text,
-        flareguard::bindings::cli::CliFormat::Json => flareguard::bindings::types::OutputFormat::Json,
-        flareguard::bindings::cli::CliFormat::Sarif => flareguard::bindings::types::OutputFormat::Sarif,
+        flareguard::bindings::cli::CliFormat::Text => {
+            flareguard::bindings::types::OutputFormat::Text
+        }
+        flareguard::bindings::cli::CliFormat::Json => {
+            flareguard::bindings::types::OutputFormat::Json
+        }
+        flareguard::bindings::cli::CliFormat::Sarif => {
+            flareguard::bindings::types::OutputFormat::Sarif
+        }
     };
 
     if let Err(e) = flareguard::bindings::reporter::render_report(&report, format) {
@@ -248,7 +288,11 @@ async fn run_origin_command(cli: flareguard::origin::cli::Cli) -> Result<()> {
     let report = match report_res {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("{} Failed to complete scan: {}", "Error:".bright_red().bold(), e);
+            eprintln!(
+                "{} Failed to complete scan: {}",
+                "Error:".bright_red().bold(),
+                e
+            );
             exit(1);
         }
     };
@@ -256,17 +300,30 @@ async fn run_origin_command(cli: flareguard::origin::cli::Cli) -> Result<()> {
     let formatted_output = match flareguard::origin::report::render_report(&report, output_format) {
         Ok(out) => out,
         Err(e) => {
-            eprintln!("{} Failed to format report: {}", "Error:".bright_red().bold(), e);
+            eprintln!(
+                "{} Failed to format report: {}",
+                "Error:".bright_red().bold(),
+                e
+            );
             exit(1);
         }
     };
 
     if let Some(ref path) = cli.output {
         if let Err(e) = fs::write(path, &formatted_output) {
-            eprintln!("{} Failed to write report to {}: {}", "Error:".bright_red().bold(), path.display(), e);
+            eprintln!(
+                "{} Failed to write report to {}: {}",
+                "Error:".bright_red().bold(),
+                path.display(),
+                e
+            );
             exit(1);
         }
-        println!("{} Report successfully saved to {}", "Success:".bright_green().bold(), path.display().to_string().cyan());
+        println!(
+            "{} Report successfully saved to {}",
+            "Success:".bright_green().bold(),
+            path.display().to_string().cyan()
+        );
     } else {
         println!("{}", formatted_output);
     }
@@ -298,11 +355,15 @@ async fn run_origin_command(cli: flareguard::origin::cli::Cli) -> Result<()> {
     Ok(())
 }
 
-async fn run_check_command(args: flareguard::cli::CheckArgs) -> Result<()> {
-    println!("{}", "🛡️ Running Flareguard Complete Workspace Audit...\n".bold());
+async fn run_check_command(args: CheckArgs) -> Result<()> {
+    if args.format == CheckOutputFormat::Text {
+        println!(
+            "{}",
+            "🛡️ Running Flareguard Complete Workspace Audit...\n".bold()
+        );
+    }
 
     // 1. Secrets Scan
-    println!("{}", "1. Scanning for Leaked Cloudflare Secrets & Credentials...".cyan().bold());
     let rules = flareguard::secrets::rules::builtin::get_builtin_rules();
     let ignore_filter = flareguard::secrets::ignore::IgnoreFilter::new();
     let options = flareguard::secrets::scanner::ScannerOptions {
@@ -310,16 +371,30 @@ async fn run_check_command(args: flareguard::cli::CheckArgs) -> Result<()> {
         min_severity: flareguard::secrets::rules::types::Severity::Low,
         follow_symlinks: false,
     };
-    let scan_res = flareguard::secrets::scanner::scan_targets(&[args.path.clone()], &rules, &ignore_filter, &options);
-    let has_secret_leaks = !scan_res.findings.is_empty();
-    if let Ok(rendered) = flareguard::secrets::report::render_report(
-        flareguard::secrets::report::OutputFormat::Text,
-        &scan_res,
+    let scan_res = flareguard::secrets::scanner::scan_targets(
+        std::slice::from_ref(&args.path),
         &rules,
-        env!("CARGO_PKG_VERSION"),
-        false,
-    ) {
-        println!("{}", rendered);
+        &ignore_filter,
+        &options,
+    );
+    let has_secret_leaks = !scan_res.findings.is_empty();
+
+    if args.format == CheckOutputFormat::Text {
+        println!(
+            "{}",
+            "1. Scanning for Leaked Cloudflare Secrets & Credentials..."
+                .cyan()
+                .bold()
+        );
+        if let Ok(rendered) = flareguard::secrets::report::render_report(
+            flareguard::secrets::report::OutputFormat::Text,
+            &scan_res,
+            &rules,
+            env!("CARGO_PKG_VERSION"),
+            false,
+        ) {
+            println!("{}", rendered);
+        }
     }
 
     // 2. Bindings Validation (if wrangler file found)
@@ -327,7 +402,14 @@ async fn run_check_command(args: flareguard::cli::CheckArgs) -> Result<()> {
     let mut has_binding_errors = false;
 
     if let Some(ref cfg) = config_path {
-        println!("\n{}", "2. Validating Cloudflare Worker Bindings vs AST...".cyan().bold());
+        if args.format == CheckOutputFormat::Text {
+            println!(
+                "\n{}",
+                "2. Validating Cloudflare Worker Bindings vs AST..."
+                    .cyan()
+                    .bold()
+            );
+        }
         if let Ok(wrangler_config) = flareguard::bindings::wrangler::parse_wrangler_config(cfg) {
             let options = flareguard::bindings::validator::ValidatorOptions {
                 target_paths: vec![args.path.clone()],
@@ -336,20 +418,33 @@ async fn run_check_command(args: flareguard::cli::CheckArgs) -> Result<()> {
                 ignore_undeclared: HashSet::new(),
                 strict: args.strict,
             };
-            if let Ok(report) = flareguard::bindings::validator::validate_project(Some(&wrangler_config), &options) {
-                let _ = flareguard::bindings::reporter::render_report(&report, flareguard::bindings::types::OutputFormat::Text);
-                has_binding_errors = !report.undeclared_accesses.is_empty() || (args.strict && !report.ghost_bindings.is_empty());
+            if let Ok(report) =
+                flareguard::bindings::validator::validate_project(Some(&wrangler_config), &options)
+            {
+                if args.format == CheckOutputFormat::Text {
+                    let _ = flareguard::bindings::reporter::render_report(
+                        &report,
+                        flareguard::bindings::types::OutputFormat::Text,
+                    );
+                }
+                has_binding_errors = !report.undeclared_accesses.is_empty()
+                    || (args.strict && !report.ghost_bindings.is_empty());
             }
         }
-    } else {
-        println!("\n{} No wrangler configuration file detected in target path.", "ℹ".blue());
+    } else if args.format == CheckOutputFormat::Text {
+        println!(
+            "\n{} No wrangler configuration file detected in target path.",
+            "ℹ".blue()
+        );
     }
 
-    if args.strict && (has_secret_leaks || has_binding_errors) {
-        println!("\n{} Workspace security check failed.", "✗".red().bold());
-        exit(1);
-    } else {
-        println!("\n{} Workspace security check passed!", "✓".green().bold());
+    if args.format == CheckOutputFormat::Text {
+        if args.strict && (has_secret_leaks || has_binding_errors) {
+            println!("\n{} Workspace security check failed.", "✗".red().bold());
+            exit(1);
+        } else {
+            println!("\n{} Workspace security check passed!", "✓".green().bold());
+        }
     }
 
     Ok(())

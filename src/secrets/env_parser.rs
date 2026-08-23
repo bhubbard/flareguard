@@ -1,23 +1,73 @@
+use crate::secrets::rules::types::{Rule, Severity};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::secrets::rules::types::{Rule, Severity};
 
 /// Known non-secret variable keys to ignore when scanning.
 const BENIGN_KEYS: &[&str] = &[
-    "port", "host", "hostname", "node_env", "env", "environment", "app_env", "stage",
-    "debug", "log_level", "tz", "lang", "app_name", "title", "version",
+    "port",
+    "host",
+    "hostname",
+    "node_env",
+    "env",
+    "environment",
+    "app_env",
+    "stage",
+    "debug",
+    "log_level",
+    "tz",
+    "lang",
+    "app_name",
+    "title",
+    "version",
 ];
 
 /// Known non-secret string values to ignore when scanning for leaked environment variables.
 const BENIGN_VALUES: &[&str] = &[
-    "true", "false", "null", "undefined", "none", "0", "1", "true\n", "false\n",
-    "development", "production", "staging", "test", "local", "dev", "prod",
-    "localhost", "127.0.0.1", "0.0.0.0", "::1", "http://localhost", "https://localhost",
-    "http://127.0.0.1", "https://127.0.0.1", "http://localhost:8787", "http://localhost:3000",
-    "http://localhost:5173", "http://localhost:4321", "public", "index.html",
-    "utf-8", "application/json", "text/html", "text/plain", "GET", "POST", "PUT", "DELETE",
-    "info", "warn", "warning", "error", "trace", "verbose",
+    "true",
+    "false",
+    "null",
+    "undefined",
+    "none",
+    "0",
+    "1",
+    "true\n",
+    "false\n",
+    "development",
+    "production",
+    "staging",
+    "test",
+    "local",
+    "dev",
+    "prod",
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "::1",
+    "http://localhost",
+    "https://localhost",
+    "http://127.0.0.1",
+    "https://127.0.0.1",
+    "http://localhost:8787",
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:4321",
+    "public",
+    "index.html",
+    "utf-8",
+    "application/json",
+    "text/html",
+    "text/plain",
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "info",
+    "warn",
+    "warning",
+    "error",
+    "trace",
+    "verbose",
 ];
 
 /// Represents an extracted environment variable key-value pair.
@@ -78,7 +128,8 @@ pub fn parse_wrangler_file(path: &Path) -> Result<Vec<EnvSecret>, std::io::Error
         for line in content.lines() {
             let trimmed = line.trim();
             if trimmed.starts_with('[') {
-                in_vars = trimmed == "[vars]" || trimmed.starts_with("[env.") && trimmed.ends_with(".vars]");
+                in_vars = trimmed == "[vars]"
+                    || trimmed.starts_with("[env.") && trimmed.ends_with(".vars]");
                 continue;
             }
 
@@ -129,7 +180,9 @@ fn strip_jsonc_comments(jsonc: &str) -> String {
             result.push(c);
         } else if in_string {
             result.push(c);
-            if c == '\\' && let Some(next) = chars.next() {
+            if c == '\\'
+                && let Some(next) = chars.next()
+            {
                 result.push(next);
             }
         } else if c == '/' && chars.peek() == Some(&'/') {
@@ -331,8 +384,8 @@ pub fn env_secrets_to_rules(secrets: &[EnvSecret]) -> Vec<Rule> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::NamedTempFile;
     use std::io::Write;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_parse_env_file() {
@@ -363,7 +416,10 @@ PORT=8787
 
     #[test]
     fn test_parse_wrangler_jsonc() {
-        let mut tmp = tempfile::Builder::new().suffix(".jsonc").tempfile().unwrap();
+        let mut tmp = tempfile::Builder::new()
+            .suffix(".jsonc")
+            .tempfile()
+            .unwrap();
         writeln!(
             tmp,
             r#"

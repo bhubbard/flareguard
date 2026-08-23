@@ -1,8 +1,7 @@
 use crate::origin::cloudflare::{is_cloudflare_ip, partition_ips};
 use crate::origin::crtsh::query_crtsh;
 use crate::origin::dns::{
-    extract_ips_from_spf, resolve_ips, resolve_mx_servers,
-    resolve_ns_records, resolve_txt_records,
+    extract_ips_from_spf, resolve_ips, resolve_mx_servers, resolve_ns_records, resolve_txt_records,
 };
 use crate::origin::error::Result;
 use crate::origin::models::{CandidateIp, DiscoverySource};
@@ -115,7 +114,10 @@ pub async fn enumerate_candidate_ips(
                     source: DiscoverySource::DirectDns(root.clone()),
                     hostname: Some(root.clone()),
                     is_cloudflare: false,
-                    notes: vec!["Apex / Root domain A/AAAA record points directly to non-Cloudflare IP".into()],
+                    notes: vec![
+                        "Apex / Root domain A/AAAA record points directly to non-Cloudflare IP"
+                            .into(),
+                    ],
                 },
             );
         }
@@ -128,15 +130,13 @@ pub async fn enumerate_candidate_ips(
             for (exchange, ips) in mx_list {
                 for ip in ips {
                     if !is_cloudflare_ip(&ip) {
-                        candidate_map
-                            .entry(ip)
-                            .or_insert_with(|| CandidateIp {
-                                ip,
-                                source: DiscoverySource::MxRecord(exchange.clone()),
-                                hostname: Some(exchange.clone()),
-                                is_cloudflare: false,
-                                notes: vec![format!("Discovered via MX exchange {}", exchange)],
-                            });
+                        candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                            ip,
+                            source: DiscoverySource::MxRecord(exchange.clone()),
+                            hostname: Some(exchange.clone()),
+                            is_cloudflare: false,
+                            notes: vec![format!("Discovered via MX exchange {}", exchange)],
+                        });
                     }
                 }
             }
@@ -148,15 +148,13 @@ pub async fn enumerate_candidate_ips(
                 let spf_ips = extract_ips_from_spf(txt);
                 for ip in spf_ips {
                     if !is_cloudflare_ip(&ip) {
-                        candidate_map
-                            .entry(ip)
-                            .or_insert_with(|| CandidateIp {
-                                ip,
-                                source: DiscoverySource::SpfRecord(txt.clone()),
-                                hostname: None,
-                                is_cloudflare: false,
-                                notes: vec!["Extracted from SPF policy declaration".into()],
-                            });
+                        candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                            ip,
+                            source: DiscoverySource::SpfRecord(txt.clone()),
+                            hostname: None,
+                            is_cloudflare: false,
+                            notes: vec!["Extracted from SPF policy declaration".into()],
+                        });
                     }
                 }
             }
@@ -168,15 +166,13 @@ pub async fn enumerate_candidate_ips(
                 if let Ok(ips) = resolve_ips(resolver, &ns).await {
                     for ip in ips {
                         if !is_cloudflare_ip(&ip) {
-                            candidate_map
-                                .entry(ip)
-                                .or_insert_with(|| CandidateIp {
-                                    ip,
-                                    source: DiscoverySource::DirectDns(format!("NS: {}", ns)),
-                                    hostname: Some(ns.clone()),
-                                    is_cloudflare: false,
-                                    notes: vec![format!("Discovered via Nameserver {}", ns)],
-                                });
+                            candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                                ip,
+                                source: DiscoverySource::DirectDns(format!("NS: {}", ns)),
+                                hostname: Some(ns.clone()),
+                                is_cloudflare: false,
+                                notes: vec![format!("Discovered via Nameserver {}", ns)],
+                            });
                         }
                     }
                 }
@@ -215,23 +211,21 @@ pub async fn enumerate_candidate_ips(
         while let Some((fqdn, ips)) = buffered.next().await {
             for ip in ips {
                 if !is_cloudflare_ip(&ip) {
-                    candidate_map
-                        .entry(ip)
-                        .or_insert_with(|| CandidateIp {
-                            ip,
-                            source: DiscoverySource::Subdomain(fqdn.clone()),
-                            hostname: Some(fqdn.clone()),
-                            is_cloudflare: false,
-                            notes: vec![format!("Subdomain {} resolved to unmasked IP", fqdn)],
-                        });
+                    candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                        ip,
+                        source: DiscoverySource::Subdomain(fqdn.clone()),
+                        hostname: Some(fqdn.clone()),
+                        is_cloudflare: false,
+                        notes: vec![format!("Subdomain {} resolved to unmasked IP", fqdn)],
+                    });
                 }
             }
         }
     }
 
     // 4. Certificate Transparency Logs (crt.sh)
-    if options.enable_crtsh {
-        if let Ok(sans) = query_crtsh(http_client, &root, options.timeout_secs).await {
+    if options.enable_crtsh
+        && let Ok(sans) = query_crtsh(http_client, &root, options.timeout_secs).await {
             let stream = stream::iter(sans).map(|san| {
                 let res = resolver.clone();
                 async move {
@@ -244,20 +238,17 @@ pub async fn enumerate_candidate_ips(
             while let Some((san, ips)) = buffered.next().await {
                 for ip in ips {
                     if !is_cloudflare_ip(&ip) {
-                        candidate_map
-                            .entry(ip)
-                            .or_insert_with(|| CandidateIp {
-                                ip,
-                                source: DiscoverySource::CertificateTransparency(san.clone()),
-                                hostname: Some(san.clone()),
-                                is_cloudflare: false,
-                                notes: vec![format!("crt.sh SAN {} resolved to unmasked IP", san)],
-                            });
+                        candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                            ip,
+                            source: DiscoverySource::CertificateTransparency(san.clone()),
+                            hostname: Some(san.clone()),
+                            is_cloudflare: false,
+                            notes: vec![format!("crt.sh SAN {} resolved to unmasked IP", san)],
+                        });
                     }
                 }
             }
         }
-    }
 
     let mut result: Vec<CandidateIp> = candidate_map.into_values().collect();
     result.sort_by_key(|c| c.ip);

@@ -112,15 +112,22 @@ pub struct ZoneAuditReport {
 
 impl ZoneAuditReport {
     pub fn count_by_severity(&self, severity: RiskLevel) -> usize {
-        self.findings.iter().filter(|f| f.risk_level == severity).count()
+        self.findings
+            .iter()
+            .filter(|f| f.risk_level == severity)
+            .count()
     }
 
     pub fn has_critical(&self) -> bool {
-        self.findings.iter().any(|f| f.risk_level == RiskLevel::Critical)
+        self.findings
+            .iter()
+            .any(|f| f.risk_level == RiskLevel::Critical)
     }
 
     pub fn has_high_or_critical(&self) -> bool {
-        self.findings.iter().any(|f| f.risk_level == RiskLevel::Critical || f.risk_level == RiskLevel::High)
+        self.findings
+            .iter()
+            .any(|f| f.risk_level == RiskLevel::Critical || f.risk_level == RiskLevel::High)
     }
 }
 
@@ -157,7 +164,8 @@ impl AggregateAuditReport {
             (sum as f64) / (total_zones as f64)
         };
 
-        let overall_grade = crate::zone::scoring::calculate_grade(average_score.round() as u32).to_string();
+        let overall_grade =
+            crate::zone::scoring::calculate_grade(average_score.round() as u32).to_string();
 
         let mut total_findings = SeverityCounts::default();
         for z in &zone_reports {

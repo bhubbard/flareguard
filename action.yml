@@ -1,0 +1,55 @@
+name: "Flareguard Security Guardian"
+description: "High-performance AST secret scanning, Worker binding verification, Zone posture auditing, and origin leak hunting."
+author: "Brandon Hubbard <bhubbard@users.noreply.github.com>"
+branding:
+  icon: "shield"
+  color: "blue"
+
+inputs:
+  command:
+    description: "Flareguard command to run (check, secrets, bindings, zone, origin)"
+    required: false
+    default: "check"
+  path:
+    description: "Target directory or file path to scan/validate"
+    required: false
+    default: "."
+  strict:
+    description: "Fail CI on any warning or unused binding"
+    required: false
+    default: "true"
+  format:
+    description: "Report output format (text, json, sarif)"
+    required: false
+    default: "text"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Cargo Dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-flareguard-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-flareguard-
+
+    - name: Install Flareguard
+      shell: bash
+      run: |
+        if ! command -v flareguard &> /dev/null; then
+          cargo install --path ${{ github.action_path }}
+        fi
+
+    - name: Run Flareguard
+      shell: bash
+      run: |
+        flareguard ${{ inputs.command }} ${{ inputs.path }}

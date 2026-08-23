@@ -22,8 +22,7 @@ pub fn render_terminal(report: &AggregateAuditReport, verbose: bool) -> String {
     ));
     out.push_str(&format!(
         "║  {}  ║\n",
-        "   Posture Assessment & Compliance Enforcement Suite"
-            .dimmed()
+        "   Posture Assessment & Compliance Enforcement Suite".dimmed()
     ));
     out.push_str(&format!(
         "{}\n\n",
@@ -43,28 +42,58 @@ pub fn render_terminal(report: &AggregateAuditReport, verbose: bool) -> String {
     };
 
     let score_colored = if report.average_score >= 90.0 {
-        format!("{:.1} / 100", report.average_score).bright_green().bold()
+        format!("{:.1} / 100", report.average_score)
+            .bright_green()
+            .bold()
     } else if report.average_score >= 80.0 {
         format!("{:.1} / 100", report.average_score).green().bold()
     } else if report.average_score >= 70.0 {
         format!("{:.1} / 100", report.average_score).yellow().bold()
     } else {
-        format!("{:.1} / 100", report.average_score).bright_red().bold()
+        format!("{:.1} / 100", report.average_score)
+            .bright_red()
+            .bold()
     };
 
-    out.push_str(&format!("  📊 {} {}\n", "Audited Timestamp:".dimmed(), report.timestamp.to_rfc3339()));
+    out.push_str(&format!(
+        "  📊 {} {}\n",
+        "Audited Timestamp:".dimmed(),
+        report.timestamp.to_rfc3339()
+    ));
     if let Some(ref acc) = report.account_id {
         out.push_str(&format!("  🏢 {} {}\n", "Account ID:".dimmed(), acc));
     }
-    out.push_str(&format!("  🌐 {} {}\n", "Total Zones Audited:".dimmed(), report.total_zones.to_string().bold()));
-    out.push_str(&format!("  🏆 {} {}\n", "Account Security Score:".dimmed(), score_colored));
-    out.push_str(&format!("  🎖️ {} {}\n", "Overall Health Grade:".dimmed(), grade_colored));
+    out.push_str(&format!(
+        "  🌐 {} {}\n",
+        "Total Zones Audited:".dimmed(),
+        report.total_zones.to_string().bold()
+    ));
+    out.push_str(&format!(
+        "  🏆 {} {}\n",
+        "Account Security Score:".dimmed(),
+        score_colored
+    ));
+    out.push_str(&format!(
+        "  🎖️ {} {}\n",
+        "Overall Health Grade:".dimmed(),
+        grade_colored
+    ));
     out.push_str(&format!(
         "  🚨 {} [ {} {} | {} {} | {} {} | {} {} | {} {} ]\n\n",
         "Findings Summary:".dimmed(),
-        report.total_findings.critical.to_string().bright_red().bold(),
+        report
+            .total_findings
+            .critical
+            .to_string()
+            .bright_red()
+            .bold(),
         "CRITICAL".bright_red(),
-        report.total_findings.high.to_string().bright_yellow().bold(),
+        report
+            .total_findings
+            .high
+            .to_string()
+            .bright_yellow()
+            .bold(),
         "HIGH".bright_yellow(),
         report.total_findings.medium.to_string().yellow(),
         "MEDIUM".yellow(),
@@ -89,8 +118,12 @@ pub fn render_terminal(report: &AggregateAuditReport, verbose: bool) -> String {
             Cell::new("HSTS").add_attribute(Attribute::Bold),
             Cell::new("WAF").add_attribute(Attribute::Bold),
             Cell::new("DNSSEC").add_attribute(Attribute::Bold),
-            Cell::new("Score").add_attribute(Attribute::Bold).set_alignment(CellAlignment::Center),
-            Cell::new("Grade").add_attribute(Attribute::Bold).set_alignment(CellAlignment::Center),
+            Cell::new("Score")
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center),
+            Cell::new("Grade")
+                .add_attribute(Attribute::Bold)
+                .set_alignment(CellAlignment::Center),
         ]);
 
     for z in &report.zone_reports {
@@ -131,7 +164,8 @@ pub fn render_terminal(report: &AggregateAuditReport, verbose: bool) -> String {
         ));
         out.push_str(&format!(
             "{}\n\n",
-            "──────────────────────────────────────────────────────────────────────────────".dimmed()
+            "──────────────────────────────────────────────────────────────────────────────"
+                .dimmed()
         ));
 
         for z in &report.zone_reports {
@@ -183,7 +217,10 @@ pub fn render_terminal(report: &AggregateAuditReport, verbose: bool) -> String {
                 };
 
                 let desc_text = format!("{}\n{}", f.title.bold(), f.description.dimmed());
-                let value_text = format!("Actual:   {}\nExpected: {}", f.actual_value, f.expected_value);
+                let value_text = format!(
+                    "Actual:   {}\nExpected: {}",
+                    f.actual_value, f.expected_value
+                );
 
                 finding_table.add_row(vec![
                     Cell::new(&f.rule_id).add_attribute(Attribute::Bold),
@@ -221,9 +258,7 @@ fn format_ssl_cell(mode: &str) -> Cell {
 }
 
 fn format_tls_cell(tls: &str) -> Cell {
-    if tls.contains("1.3") {
-        Cell::new(tls).fg(Color::Green)
-    } else if tls.contains("1.2") {
+    if tls.contains("1.3") || tls.contains("1.2") {
         Cell::new(tls).fg(Color::Green)
     } else {
         Cell::new(tls).fg(Color::Red).add_attribute(Attribute::Bold)

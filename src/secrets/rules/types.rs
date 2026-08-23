@@ -50,7 +50,10 @@ impl std::str::FromStr for Severity {
             "medium" | "med" | "warning" | "warn" => Ok(Severity::Medium),
             "high" | "error" => Ok(Severity::High),
             "critical" | "crit" => Ok(Severity::Critical),
-            _ => Err(format!("Invalid severity '{}'. Valid values: low, medium, high, critical", s)),
+            _ => Err(format!(
+                "Invalid severity '{}'. Valid values: low, medium, high, critical",
+                s
+            )),
         }
     }
 }

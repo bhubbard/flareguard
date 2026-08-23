@@ -108,7 +108,10 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
     html.push_str("<h1>🛡️ Cloudflare Zone Security Auditor</h1>\n");
     html.push_str("<p>Automated Multi-Zone Security Posture & Compliance Report</p>\n");
     html.push_str("</div>\n<div class=\"timestamp\">\n");
-    html.push_str(&format!("Generated: {}<br>", report.timestamp.format("%Y-%m-%d %H:%M:%S UTC")));
+    html.push_str(&format!(
+        "Generated: {}<br>",
+        report.timestamp.format("%Y-%m-%d %H:%M:%S UTC")
+    ));
     if let Some(ref acc) = report.account_id {
         html.push_str(&format!("Account: <code>{}</code>\n", acc));
     }
@@ -116,7 +119,7 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
 
     // Summary Cards
     html.push_str("<div class=\"summary-grid\">\n");
-    
+
     // Card 1: Score
     html.push_str("<div class=\"card\">\n<div class=\"card-label\">Overall Security Score</div>\n");
     html.push_str(&format!(
@@ -135,24 +138,42 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
 
     // Card 3: Total Zones
     html.push_str("<div class=\"card\">\n<div class=\"card-label\">Zones Audited</div>\n");
-    html.push_str(&format!("<div class=\"card-val\">{}</div>\n", report.total_zones));
+    html.push_str(&format!(
+        "<div class=\"card-val\">{}</div>\n",
+        report.total_zones
+    ));
     html.push_str("</div>\n");
 
     // Card 4: Findings Breakdown
     html.push_str("<div class=\"card\">\n<div class=\"card-label\">Total Findings</div>\n");
-    html.push_str(&format!("<div class=\"card-val\">{}</div>\n", report.total_findings.total));
+    html.push_str(&format!(
+        "<div class=\"card-val\">{}</div>\n",
+        report.total_findings.total
+    ));
     html.push_str("<div class=\"severity-pill-group\">\n");
     if report.total_findings.critical > 0 {
-        html.push_str(&format!("<span class=\"pill pill-crit\">{} CRITICAL</span>\n", report.total_findings.critical));
+        html.push_str(&format!(
+            "<span class=\"pill pill-crit\">{} CRITICAL</span>\n",
+            report.total_findings.critical
+        ));
     }
     if report.total_findings.high > 0 {
-        html.push_str(&format!("<span class=\"pill pill-high\">{} HIGH</span>\n", report.total_findings.high));
+        html.push_str(&format!(
+            "<span class=\"pill pill-high\">{} HIGH</span>\n",
+            report.total_findings.high
+        ));
     }
     if report.total_findings.medium > 0 {
-        html.push_str(&format!("<span class=\"pill pill-med\">{} MED</span>\n", report.total_findings.medium));
+        html.push_str(&format!(
+            "<span class=\"pill pill-med\">{} MED</span>\n",
+            report.total_findings.medium
+        ));
     }
     if report.total_findings.low > 0 {
-        html.push_str(&format!("<span class=\"pill pill-low\">{} LOW</span>\n", report.total_findings.low));
+        html.push_str(&format!(
+            "<span class=\"pill pill-low\">{} LOW</span>\n",
+            report.total_findings.low
+        ));
     }
     html.push_str("</div>\n</div>\n</div>\n");
 
@@ -169,10 +190,18 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
             _ => "<span class=\"pill pill-crit\">flexible / off</span>",
         };
 
-        let tls_pill = if z.settings_summary.min_tls.contains("1.3") || z.settings_summary.min_tls.contains("1.2") {
-            format!("<span class=\"pill pill-pass\">{}</span>", z.settings_summary.min_tls)
+        let tls_pill = if z.settings_summary.min_tls.contains("1.3")
+            || z.settings_summary.min_tls.contains("1.2")
+        {
+            format!(
+                "<span class=\"pill pill-pass\">{}</span>",
+                z.settings_summary.min_tls
+            )
         } else {
-            format!("<span class=\"pill pill-crit\">{}</span>", z.settings_summary.min_tls)
+            format!(
+                "<span class=\"pill pill-crit\">{}</span>",
+                z.settings_summary.min_tls
+            )
         };
 
         let bool_pill = |val: &str| {
@@ -202,12 +231,24 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
         html.push_str(&format!("<td>{}</td>\n", z.plan_name));
         html.push_str(&format!("<td>{}</td>\n", ssl_pill));
         html.push_str(&format!("<td>{}</td>\n", tls_pill));
-        html.push_str(&format!("<td>{}</td>\n", bool_pill(&z.settings_summary.always_https)));
-        html.push_str(&format!("<td>{}</td>\n", bool_pill(&z.settings_summary.hsts_status)));
-        html.push_str(&format!("<td>{}</td>\n", bool_pill(&z.settings_summary.waf_status)));
+        html.push_str(&format!(
+            "<td>{}</td>\n",
+            bool_pill(&z.settings_summary.always_https)
+        ));
+        html.push_str(&format!(
+            "<td>{}</td>\n",
+            bool_pill(&z.settings_summary.hsts_status)
+        ));
+        html.push_str(&format!(
+            "<td>{}</td>\n",
+            bool_pill(&z.settings_summary.waf_status)
+        ));
         html.push_str(&format!("<td>{}</td>\n", dnssec_pill));
         html.push_str(&format!("<td><strong>{}/100</strong></td>\n", z.score));
-        html.push_str(&format!("<td><span class=\"pill {}\">{}</span></td>\n", zone_grade_class, z.grade));
+        html.push_str(&format!(
+            "<td><span class=\"pill {}\">{}</span></td>\n",
+            zone_grade_class, z.grade
+        ));
         html.push_str("</tr>\n");
     }
     html.push_str("</tbody>\n</table>\n</section>\n");
@@ -220,17 +261,31 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
         html.push_str("<div class=\"zone-accordion\">\n");
         html.push_str("<div class=\"zone-header\">\n");
         html.push_str("<div class=\"zone-info\">\n");
-        html.push_str(&format!("<span class=\"zone-name\">{}</span>\n", z.zone_name));
-        html.push_str(&format!("<span class=\"zone-meta\">Plan: {} | ID: {}</span>\n", z.plan_name, z.zone_id));
+        html.push_str(&format!(
+            "<span class=\"zone-name\">{}</span>\n",
+            z.zone_name
+        ));
+        html.push_str(&format!(
+            "<span class=\"zone-meta\">Plan: {} | ID: {}</span>\n",
+            z.plan_name, z.zone_id
+        ));
         html.push_str("</div>\n<div>\n");
-        html.push_str(&format!("<span class=\"pill {}\">Score: {} ({})</span> ", match z.grade.as_str() {
-            "A+" | "A" => "pill-pass",
-            "B" => "pill-low",
-            "C" => "pill-med",
-            "D" => "pill-high",
-            _ => "pill-crit",
-        }, z.score, z.grade));
-        html.push_str(&format!("<span class=\"zone-meta\">{} Findings</span>\n", finding_count));
+        html.push_str(&format!(
+            "<span class=\"pill {}\">Score: {} ({})</span> ",
+            match z.grade.as_str() {
+                "A+" | "A" => "pill-pass",
+                "B" => "pill-low",
+                "C" => "pill-med",
+                "D" => "pill-high",
+                _ => "pill-crit",
+            },
+            z.score,
+            z.grade
+        ));
+        html.push_str(&format!(
+            "<span class=\"zone-meta\">{} Findings</span>\n",
+            finding_count
+        ));
         html.push_str("</div>\n</div>\n");
 
         if !z.findings.is_empty() {
@@ -247,12 +302,24 @@ footer { margin-top: 3rem; text-align: center; color: var(--text-secondary); fon
                 html.push_str("<div class=\"finding-item\">\n");
                 html.push_str("<div class=\"finding-head\">\n");
                 html.push_str(&format!("<div><span class=\"finding-title\">{}</span> <span class=\"zone-meta\">[{}]</span></div>\n", f.title, f.rule_id));
-                html.push_str(&format!("<span class=\"pill {}\">{}</span>\n", sev_class, f.risk_level));
+                html.push_str(&format!(
+                    "<span class=\"pill {}\">{}</span>\n",
+                    sev_class, f.risk_level
+                ));
                 html.push_str("</div>\n");
-                html.push_str(&format!("<div class=\"finding-desc\">{}</div>\n", f.description));
+                html.push_str(&format!(
+                    "<div class=\"finding-desc\">{}</div>\n",
+                    f.description
+                ));
                 html.push_str("<div class=\"finding-grid\">\n");
-                html.push_str(&format!("<div><strong>Current:</strong> {}</div>\n", f.actual_value));
-                html.push_str(&format!("<div><strong>Recommended:</strong> {}</div>\n", f.expected_value));
+                html.push_str(&format!(
+                    "<div><strong>Current:</strong> {}</div>\n",
+                    f.actual_value
+                ));
+                html.push_str(&format!(
+                    "<div><strong>Recommended:</strong> {}</div>\n",
+                    f.expected_value
+                ));
                 html.push_str("</div>\n");
                 html.push_str("<div class=\"remediation-box\">\n");
                 html.push_str("<div class=\"remediation-label\">🛠️ Remediation Guidance</div>\n");

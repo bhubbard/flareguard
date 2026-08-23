@@ -6,10 +6,10 @@ pub mod reporters;
 pub mod rules;
 pub mod scoring;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use cli::{AuditArgs, OutputFormat};
 use client::{CloudflareClient, ZoneDataProvider};
-use mock_data::{MockZoneProvider};
+use mock_data::MockZoneProvider;
 use models::AggregateAuditReport;
 use rules::evaluate_zone;
 use std::fs;
@@ -70,7 +70,10 @@ pub fn output_report(report: &AggregateAuditReport, args: &AuditArgs) -> Result<
 }
 
 /// Evaluates CI compliance gates and returns true if passing, false if failed
-pub fn evaluate_compliance_gates(report: &AggregateAuditReport, args: &AuditArgs) -> (bool, Vec<String>) {
+pub fn evaluate_compliance_gates(
+    report: &AggregateAuditReport,
+    args: &AuditArgs,
+) -> (bool, Vec<String>) {
     let mut passed = true;
     let mut failure_reasons = Vec::new();
 

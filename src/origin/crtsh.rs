@@ -20,7 +20,10 @@ pub struct CrtShEntry {
 /// Parses certificate transparency log entries to extract unique subdomains
 pub fn extract_subdomains_from_crtsh(entries: &[CrtShEntry], root_domain: &str) -> Vec<String> {
     let mut subdomains = HashSet::new();
-    let root_lower = root_domain.to_lowercase().trim_start_matches('.').to_string();
+    let root_lower = root_domain
+        .to_lowercase()
+        .trim_start_matches('.')
+        .to_string();
 
     for entry in entries {
         if let Some(ref common_name) = entry.common_name {
@@ -109,7 +112,9 @@ mod tests {
                 issuer_ca_id: Some(1),
                 issuer_name: Some("Let's Encrypt".into()),
                 common_name: Some("origin.example.com".into()),
-                name_value: Some("origin.example.com\n*.dev.example.com\napi-origin.example.com".into()),
+                name_value: Some(
+                    "origin.example.com\n*.dev.example.com\napi-origin.example.com".into(),
+                ),
                 id: Some(100),
                 entry_timestamp: None,
                 not_before: None,

@@ -1,8 +1,9 @@
-use clap::{Parser, Subcommand, Args};
+use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
 use std::path::PathBuf;
 
 /// 🛡️ Flareguard — Unified Cloudflare Security & Architecture Guardian
-/// 
+///
 /// High-performance Rust CLI & library providing AST secret scanning,
 /// Worker binding verification, Zone security posture auditing, and origin IP leak hunting.
 #[derive(Parser, Debug)]
@@ -16,7 +17,8 @@ use std::path::PathBuf;
 - bindings: Validate wrangler.toml/jsonc bindings against JavaScript/TypeScript AST usage\n\
 - zone: Audit live Cloudflare Zone security posture (SSL, HSTS, WAF, Bot Fight, DNSSEC)\n\
 - origin: Hunt for unmasked backend origin IPs bypassing Cloudflare proxies\n\
-- check: Run end-to-end local repository verification (secrets + bindings)"
+- check: Run end-to-end local repository verification (secrets + bindings)\n\
+- completions: Generate shell autocompletions (bash, zsh, fish, powershell)"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -39,6 +41,20 @@ pub enum Commands {
 
     /// 🚀 Run comprehensive workspace verification (secrets scan + binding validation)
     Check(CheckArgs),
+
+    /// 🐚 Generate shell autocompletion scripts
+    Completions {
+        /// The target shell
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum CheckOutputFormat {
+    Text,
+    Json,
+    Sarif,
 }
 
 #[derive(Args, Debug, Clone)]
@@ -50,4 +66,12 @@ pub struct CheckArgs {
     /// Fail with exit code 1 if any issues are detected
     #[arg(long, default_value_t = true)]
     pub strict: bool,
+
+    /// Output report format (text, json, sarif)
+    #[arg(short = 'f', long = "format", value_enum, default_value_t = CheckOutputFormat::Text)]
+    pub format: CheckOutputFormat,
+
+    /// Save output report to specified file path
+    #[arg(short = 'o', long = "output")]
+    pub output: Option<PathBuf>,
 }

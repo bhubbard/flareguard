@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::secrets::rules::types::Finding;
 use crate::secrets::scanner::ScanStats;
+use serde::{Deserialize, Serialize};
 
 /// Top-level JSON report structure.
 #[derive(Debug, Clone, Serialize, Deserialize)]

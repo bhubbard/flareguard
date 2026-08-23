@@ -9,8 +9,8 @@ pub fn calculate_confidence(
 ) -> (ConfidenceLevel, u8, String) {
     // 1. Check for exact probe match (CONFIRMED - 100%)
     for probe in successful_probes {
-        if let Some(ref match_details) = probe.match_details {
-            if match_details.exact_body_hash_match {
+        if let Some(ref match_details) = probe.match_details
+            && match_details.exact_body_hash_match {
                 return (
                     ConfidenceLevel::Confirmed,
                     100,
@@ -20,13 +20,12 @@ pub fn calculate_confidence(
                     ),
                 );
             }
-        }
     }
 
     // 2. Check for title match and header similarities (HIGH - 85%)
     for probe in successful_probes {
-        if let Some(ref match_details) = probe.match_details {
-            if match_details.title_match && !match_details.cf_ray_present {
+        if let Some(ref match_details) = probe.match_details
+            && match_details.title_match && !match_details.cf_ray_present {
                 let baseline_title = baseline.html_title.as_deref().unwrap_or("N/A");
                 return (
                     ConfidenceLevel::High,
@@ -37,7 +36,6 @@ pub fn calculate_confidence(
                     ),
                 );
             }
-        }
     }
 
     // 3. Check for direct subdomain origin bypass (HIGH - 80-85%)
@@ -54,8 +52,8 @@ pub fn calculate_confidence(
                 );
             }
         }
-        DiscoverySource::CertificateTransparency(san) if is_high_value_subdomain(san) => {
-            if !successful_probes.is_empty() {
+        DiscoverySource::CertificateTransparency(san) if is_high_value_subdomain(san)
+            && !successful_probes.is_empty() => {
                 return (
                     ConfidenceLevel::High,
                     80,
@@ -65,7 +63,6 @@ pub fn calculate_confidence(
                     ),
                 );
             }
-        }
         _ => {}
     }
 
@@ -137,8 +134,8 @@ pub fn calculate_confidence(
                 );
             }
         }
-        DiscoverySource::HistoricalDns(src) => {
-            if !successful_probes.is_empty() {
+        DiscoverySource::HistoricalDns(src)
+            if !successful_probes.is_empty() => {
                 return (
                     ConfidenceLevel::Medium,
                     65,
@@ -148,23 +145,34 @@ pub fn calculate_confidence(
                     ),
                 );
             }
-        }
         _ => {}
     }
 
     // 5. Fallback for non-responsive candidate IPs (LOW - 25-35%)
     let reason = match source {
         DiscoverySource::Subdomain(sub) => {
-            format!("Subdomain ('{}') points to non-Cloudflare IP, but HTTP probes failed or timed out.", sub)
+            format!(
+                "Subdomain ('{}') points to non-Cloudflare IP, but HTTP probes failed or timed out.",
+                sub
+            )
         }
         DiscoverySource::CertificateTransparency(san) => {
-            format!("Certificate SAN ('{}') points to non-Cloudflare IP, but HTTP probes failed or timed out.", san)
+            format!(
+                "Certificate SAN ('{}') points to non-Cloudflare IP, but HTTP probes failed or timed out.",
+                san
+            )
         }
         DiscoverySource::HistoricalDns(src) => {
-            format!("Historical record ('{}') points to non-Cloudflare IP, but host is currently unresponsive.", src)
+            format!(
+                "Historical record ('{}') points to non-Cloudflare IP, but host is currently unresponsive.",
+                src
+            )
         }
         _ => {
-            format!("Candidate discovered via {}, but no direct HTTP verification succeeded.", source)
+            format!(
+                "Candidate discovered via {}, but no direct HTTP verification succeeded.",
+                source
+            )
         }
     };
 
@@ -174,8 +182,19 @@ pub fn calculate_confidence(
 fn is_high_value_subdomain(name: &str) -> bool {
     let lower = name.to_lowercase();
     let keywords = [
-        "origin", "direct", "cpanel", "dev", "staging", "api-origin",
-        "backend", "internal", "vps", "server", "admin", "portal", "ssh",
+        "origin",
+        "direct",
+        "cpanel",
+        "dev",
+        "staging",
+        "api-origin",
+        "backend",
+        "internal",
+        "vps",
+        "server",
+        "admin",
+        "portal",
+        "ssh",
     ];
     keywords.iter().any(|&k| lower.contains(k))
 }

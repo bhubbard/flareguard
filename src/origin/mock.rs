@@ -1,7 +1,7 @@
 use crate::origin::confidence::calculate_confidence;
 use crate::origin::models::{
-    CandidateIp, ConfidenceLevel, DiscoverySource, HunterFinding, ProbeMatchDetails,
-    ProbeResult, ScanReport, ScanSummary, TargetBaseline,
+    CandidateIp, ConfidenceLevel, DiscoverySource, HunterFinding, ProbeMatchDetails, ProbeResult,
+    ScanReport, ScanSummary, TargetBaseline,
 };
 use crate::origin::remediation::generate_remediation_plan;
 use chrono::Utc;
@@ -25,7 +25,10 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
     baseline_headers.insert("server".to_string(), "cloudflare".to_string());
     baseline_headers.insert("cf-ray".to_string(), "8df4567890abcdef-ORD".to_string());
     baseline_headers.insert("cf-cache-status".to_string(), "HIT".to_string());
-    baseline_headers.insert("content-type".to_string(), "text/html; charset=UTF-8".to_string());
+    baseline_headers.insert(
+        "content-type".to_string(),
+        "text/html; charset=UTF-8".to_string(),
+    );
 
     let baseline = TargetBaseline {
         domain: target.to_string(),
@@ -48,7 +51,10 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         source: DiscoverySource::Subdomain(format!("origin.{}", target)),
         hostname: Some(format!("origin.{}", target)),
         is_cloudflare: false,
-        notes: vec![format!("Direct bypass subdomain origin.{} resolved to unmasked IP", target)],
+        notes: vec![format!(
+            "Direct bypass subdomain origin.{} resolved to unmasked IP",
+            target
+        )],
     };
 
     let mut probe1_headers = HashMap::new();
@@ -81,12 +87,8 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf1_lvl, conf1_score, conf1_reason) = calculate_confidence(
-        &baseline,
-        &candidate1.source,
-        &[probe1.clone()],
-        &[],
-    );
+    let (conf1_lvl, conf1_score, conf1_reason) =
+        calculate_confidence(&baseline, &candidate1.source, std::slice::from_ref(&probe1), &[]);
 
     let finding1 = HunterFinding {
         candidate_ip: origin_ip,
@@ -107,7 +109,10 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         source: DiscoverySource::CertificateTransparency(format!("dev-backend.{}", target)),
         hostname: Some(format!("dev-backend.{}", target)),
         is_cloudflare: false,
-        notes: vec![format!("Historical crt.sh SAN dev-backend.{} resolved to unmasked IP", target)],
+        notes: vec![format!(
+            "Historical crt.sh SAN dev-backend.{} resolved to unmasked IP",
+            target
+        )],
     };
 
     let mut probe2_headers = HashMap::new();
@@ -121,7 +126,9 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         success: true,
         status_code: Some(200),
         html_title: Some(baseline_title.clone()),
-        body_sha256: Some("e7b1a2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1".to_string()),
+        body_sha256: Some(
+            "e7b1a2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1".to_string(),
+        ),
         body_length: 4610,
         server_header: Some("Apache/2.4.52 (Ubuntu)".to_string()),
         headers: probe2_headers,
@@ -139,12 +146,8 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf2_lvl, conf2_score, conf2_reason) = calculate_confidence(
-        &baseline,
-        &candidate2.source,
-        &[probe2.clone()],
-        &[],
-    );
+    let (conf2_lvl, conf2_score, conf2_reason) =
+        calculate_confidence(&baseline, &candidate2.source, std::slice::from_ref(&probe2), &[]);
 
     let finding2 = HunterFinding {
         candidate_ip: dev_ip,
@@ -165,7 +168,10 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         source: DiscoverySource::MxRecord(format!("mail.{}", target)),
         hostname: Some(format!("mail.{}", target)),
         is_cloudflare: false,
-        notes: vec![format!("MX record points to mail.{} on non-Cloudflare IP", target)],
+        notes: vec![format!(
+            "MX record points to mail.{} on non-Cloudflare IP",
+            target
+        )],
     };
 
     let probe3 = ProbeResult {
@@ -176,7 +182,9 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         success: true,
         status_code: Some(301),
         html_title: Some("Webmail Login".to_string()),
-        body_sha256: Some("f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2".to_string()),
+        body_sha256: Some(
+            "f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2".to_string(),
+        ),
         body_length: 512,
         server_header: Some("cPanel Web Services".to_string()),
         headers: HashMap::new(),
@@ -194,12 +202,8 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf3_lvl, conf3_score, conf3_reason) = calculate_confidence(
-        &baseline,
-        &candidate3.source,
-        &[probe3.clone()],
-        &[],
-    );
+    let (conf3_lvl, conf3_score, conf3_reason) =
+        calculate_confidence(&baseline, &candidate3.source, std::slice::from_ref(&probe3), &[]);
 
     let finding3 = HunterFinding {
         candidate_ip: mail_ip,
@@ -217,7 +221,10 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
     let spf_ip: IpAddr = "203.0.113.10".parse().unwrap();
     let candidate4 = CandidateIp {
         ip: spf_ip,
-        source: DiscoverySource::SpfRecord(format!("v=spf1 ip4:{} include:_spf.google.com ~all", spf_ip)),
+        source: DiscoverySource::SpfRecord(format!(
+            "v=spf1 ip4:{} include:_spf.google.com ~all",
+            spf_ip
+        )),
         hostname: None,
         is_cloudflare: false,
         notes: vec!["Extracted from SPF policy declaration".into()],
@@ -240,12 +247,8 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         match_details: None,
     };
 
-    let (conf4_lvl, conf4_score, conf4_reason) = calculate_confidence(
-        &baseline,
-        &candidate4.source,
-        &[],
-        &[failed_probe.clone()],
-    );
+    let (conf4_lvl, conf4_score, conf4_reason) =
+        calculate_confidence(&baseline, &candidate4.source, &[], std::slice::from_ref(&failed_probe));
 
     let finding4 = HunterFinding {
         candidate_ip: spf_ip,
@@ -269,10 +272,22 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         is_behind_cloudflare: true,
         cloudflare_edge_ips: vec![cf_edge1, cf_edge2],
         candidates_discovered: candidates.len(),
-        origins_confirmed: findings.iter().filter(|f| f.confidence == ConfidenceLevel::Confirmed).count(),
-        high_confidence_origins: findings.iter().filter(|f| f.confidence == ConfidenceLevel::High).count(),
-        medium_confidence_origins: findings.iter().filter(|f| f.confidence == ConfidenceLevel::Medium).count(),
-        low_confidence_origins: findings.iter().filter(|f| f.confidence == ConfidenceLevel::Low).count(),
+        origins_confirmed: findings
+            .iter()
+            .filter(|f| f.confidence == ConfidenceLevel::Confirmed)
+            .count(),
+        high_confidence_origins: findings
+            .iter()
+            .filter(|f| f.confidence == ConfidenceLevel::High)
+            .count(),
+        medium_confidence_origins: findings
+            .iter()
+            .filter(|f| f.confidence == ConfidenceLevel::Medium)
+            .count(),
+        low_confidence_origins: findings
+            .iter()
+            .filter(|f| f.confidence == ConfidenceLevel::Low)
+            .count(),
         is_origin_leaked: true,
     };
 

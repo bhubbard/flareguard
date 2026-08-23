@@ -1,5 +1,5 @@
 use crate::bindings::ast_scanner::scan_source_file;
-use crate::bindings::types::{BindingAccess, DeclaredBinding, ValidationReport, ValidBindingInfo};
+use crate::bindings::types::{BindingAccess, DeclaredBinding, ValidBindingInfo, ValidationReport};
 use crate::bindings::wrangler::WranglerConfig;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
@@ -52,11 +52,10 @@ pub fn discover_source_files(paths: &[PathBuf]) -> Vec<PathBuf> {
 
     for p in paths {
         if p.is_file() {
-            if let Some(ext) = p.extension().and_then(|e| e.to_str()) {
-                if supported_exts.contains(&ext) {
+            if let Some(ext) = p.extension().and_then(|e| e.to_str())
+                && supported_exts.contains(&ext) {
                     files.push(p.clone());
                 }
-            }
             continue;
         }
 
@@ -76,11 +75,10 @@ pub fn discover_source_files(paths: &[PathBuf]) -> Vec<PathBuf> {
             {
                 if entry.file_type().is_file() {
                     let path = entry.path();
-                    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                        if supported_exts.contains(&ext) {
+                    if let Some(ext) = path.extension().and_then(|e| e.to_str())
+                        && supported_exts.contains(&ext) {
                             files.push(path.to_path_buf());
                         }
-                    }
                 }
             }
         }
@@ -164,7 +162,8 @@ pub fn validate_project(
     }
 
     // Sort for deterministic results
-    undeclared_accesses.sort_by(|a, b| (&a.file_path, a.line, a.column).cmp(&(&b.file_path, b.line, b.column)));
+    undeclared_accesses
+        .sort_by(|a, b| (&a.file_path, a.line, a.column).cmp(&(&b.file_path, b.line, b.column)));
     ghost_bindings.sort_by(|a, b| a.name.cmp(&b.name));
     valid_bindings.sort_by(|a, b| a.binding.name.cmp(&b.binding.name));
 
@@ -217,8 +216,10 @@ mod tests {
             environments: std::collections::BTreeMap::new(),
         };
 
-        let mut opts = ValidatorOptions::default();
-        opts.target_paths = vec![];
+        let opts = ValidatorOptions {
+            target_paths: vec![],
+            ..Default::default()
+        };
 
         let report = validate_project(Some(&config), &opts).unwrap();
         assert_eq!(report.ghost_bindings.len(), 2);

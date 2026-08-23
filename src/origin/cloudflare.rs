@@ -34,12 +34,7 @@ pub const CLOUDFLARE_IPV6_CIDRS: &[&str] = &[
 ];
 
 /// Cloudflare Autonomous System Numbers (ASN)
-pub const CLOUDFLARE_ASNS: &[&str] = &[
-    "AS13335",
-    "AS209242",
-    "CLOUDFLARENET",
-    "CLOUDFLARE",
-];
+pub const CLOUDFLARE_ASNS: &[&str] = &["AS13335", "AS209242", "CLOUDFLARENET", "CLOUDFLARE"];
 
 static CLOUDFLARE_NETWORKS: OnceLock<Vec<IpNet>> = OnceLock::new();
 
@@ -80,7 +75,11 @@ pub fn has_cloudflare_headers(headers: &std::collections::HashMap<String, String
         if key == "server" && val.contains("cloudflare") {
             return true;
         }
-        if key == "cf-ray" || key == "cf-cache-status" || key == "cf-mitigated" || key == "cf-request-id" {
+        if key == "cf-ray"
+            || key == "cf-cache-status"
+            || key == "cf-mitigated"
+            || key == "cf-request-id"
+        {
             return true;
         }
     }

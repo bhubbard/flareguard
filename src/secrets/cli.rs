@@ -1,7 +1,7 @@
-use clap::{ArgAction, Parser};
-use std::path::PathBuf;
 use crate::secrets::report::OutputFormat;
 use crate::secrets::rules::types::Severity;
+use clap::{ArgAction, Parser};
+use std::path::PathBuf;
 
 /// Fast, multi-threaded static asset scanner to detect Cloudflare server secret leaks in client bundles.
 #[derive(Parser, Debug)]
@@ -70,14 +70,25 @@ pub struct Cli {
     pub threads: Option<usize>,
 
     /// List all built-in secret detection rules and exit
-    #[arg(long = "list-rules", help = "List all built-in Cloudflare secret detection rules and exit")]
+    #[arg(
+        long = "list-rules",
+        help = "List all built-in Cloudflare secret detection rules and exit"
+    )]
     pub list_rules: bool,
 
     /// Suppress informative terminal messages
-    #[arg(short = 'q', long = "quiet", help = "Quiet mode (suppress non-error output)")]
+    #[arg(
+        short = 'q',
+        long = "quiet",
+        help = "Quiet mode (suppress non-error output)"
+    )]
     pub quiet: bool,
 
     /// Show verbose scanning information and remediation steps
-    #[arg(short = 'v', long = "verbose", help = "Verbose mode (print detailed progress and remediation)")]
+    #[arg(
+        short = 'v',
+        long = "verbose",
+        help = "Verbose mode (print detailed progress and remediation)"
+    )]
     pub verbose: bool,
 }

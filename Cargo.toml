@@ -21,6 +21,7 @@ path = "src/main.rs"
 [dependencies]
 # CLI & Args
 clap = { version = "4.5", features = ["derive", "cargo", "env"] }
+clap_complete = "4.5"
 
 # Async & Networking
 tokio = { version = "1.43", features = ["full"] }

@@ -16,24 +16,74 @@ pub fn render_report(report: &ValidationReport, format: OutputFormat) -> io::Res
 pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
     let mut stdout = io::stdout().lock();
 
-    writeln!(stdout, "{}", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed())?;
-    writeln!(stdout, "{}", "  ⚡ Cloudflare Worker / Pages Binding Validator".bold().cyan())?;
-    writeln!(stdout, "{}", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed())?;
+    writeln!(
+        stdout,
+        "{}",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed()
+    )?;
+    writeln!(
+        stdout,
+        "{}",
+        "  ⚡ Cloudflare Worker / Pages Binding Validator"
+            .bold()
+            .cyan()
+    )?;
+    writeln!(
+        stdout,
+        "{}",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed()
+    )?;
 
     if let Some(cfg) = &report.config_file {
         writeln!(stdout, "  {} {}", "Config:".bold(), cfg.white())?;
     } else {
-        writeln!(stdout, "  {} {}", "Config:".bold(), "None found (all bindings treated as undeclared)".yellow())?;
+        writeln!(
+            stdout,
+            "  {} {}",
+            "Config:".bold(),
+            "None found (all bindings treated as undeclared)".yellow()
+        )?;
     }
-    writeln!(stdout, "  {} {}", "Environment:".bold(), report.environment.magenta())?;
-    writeln!(stdout, "  {} {}", "Files Scanned:".bold(), report.total_files_scanned.to_string().white())?;
+    writeln!(
+        stdout,
+        "  {} {}",
+        "Environment:".bold(),
+        report.environment.magenta()
+    )?;
+    writeln!(
+        stdout,
+        "  {} {}",
+        "Files Scanned:".bold(),
+        report.total_files_scanned.to_string().white()
+    )?;
     writeln!(stdout)?;
 
     // 1. Undeclared Bindings (Errors)
     if !report.undeclared_accesses.is_empty() {
-        writeln!(stdout, "{}", format!("  CRITICAL / ERROR: Undeclared Bindings ({} found)", report.undeclared_accesses.len()).bold().red())?;
-        writeln!(stdout, "  {}", "These bindings are accessed in code but NOT declared in Wrangler config.".red().italic())?;
-        writeln!(stdout, "  {}", "Risk: Runtime TypeError / crash when accessing undefined property at runtime.".red().italic())?;
+        writeln!(
+            stdout,
+            "{}",
+            format!(
+                "  CRITICAL / ERROR: Undeclared Bindings ({} found)",
+                report.undeclared_accesses.len()
+            )
+            .bold()
+            .red()
+        )?;
+        writeln!(
+            stdout,
+            "  {}",
+            "These bindings are accessed in code but NOT declared in Wrangler config."
+                .red()
+                .italic()
+        )?;
+        writeln!(
+            stdout,
+            "  {}",
+            "Risk: Runtime TypeError / crash when accessing undefined property at runtime."
+                .red()
+                .italic()
+        )?;
         writeln!(stdout)?;
 
         for access in &report.undeclared_accesses {
@@ -63,13 +113,36 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
 
     // 2. Ghost / Unused Bindings (Warnings)
     if !report.ghost_bindings.is_empty() {
-        writeln!(stdout, "{}", format!("  WARNING: Ghost / Unused Bindings ({} found)", report.ghost_bindings.len()).bold().yellow())?;
-        writeln!(stdout, "  {}", "These bindings are declared in Wrangler config but never referenced in code.".yellow().italic())?;
-        writeln!(stdout, "  {}", "Recommendation: Remove unused bindings to keep infrastructure lean.".dimmed())?;
+        writeln!(
+            stdout,
+            "{}",
+            format!(
+                "  WARNING: Ghost / Unused Bindings ({} found)",
+                report.ghost_bindings.len()
+            )
+            .bold()
+            .yellow()
+        )?;
+        writeln!(
+            stdout,
+            "  {}",
+            "These bindings are declared in Wrangler config but never referenced in code."
+                .yellow()
+                .italic()
+        )?;
+        writeln!(
+            stdout,
+            "  {}",
+            "Recommendation: Remove unused bindings to keep infrastructure lean.".dimmed()
+        )?;
         writeln!(stdout)?;
 
         for ghost in &report.ghost_bindings {
-            let details_str = ghost.details.as_deref().map(|d| format!(" ({})", d)).unwrap_or_default();
+            let details_str = ghost
+                .details
+                .as_deref()
+                .map(|d| format!(" ({})", d))
+                .unwrap_or_default();
             writeln!(
                 stdout,
                 "    {} {} [{}{}] in {}",
@@ -85,7 +158,16 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
 
     // 3. Valid / Active Bindings Summary
     if !report.valid_bindings.is_empty() {
-        writeln!(stdout, "{}", format!("  SYNCHRONIZED BINDINGS ({} active)", report.valid_bindings.len()).bold().green())?;
+        writeln!(
+            stdout,
+            "{}",
+            format!(
+                "  SYNCHRONIZED BINDINGS ({} active)",
+                report.valid_bindings.len()
+            )
+            .bold()
+            .green()
+        )?;
         for valid in &report.valid_bindings {
             writeln!(
                 stdout,
@@ -101,7 +183,11 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
     }
 
     // Summary Box
-    writeln!(stdout, "{}", "─────────────────────────────────────────────────────────────────────".dimmed())?;
+    writeln!(
+        stdout,
+        "{}",
+        "─────────────────────────────────────────────────────────────────────".dimmed()
+    )?;
     let status_str = if report.is_success {
         "✓ VALIDATION PASSED".bold().bright_green()
     } else {
@@ -129,7 +215,11 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
         errors_str,
         warnings_str,
     )?;
-    writeln!(stdout, "{}", "─────────────────────────────────────────────────────────────────────".dimmed())?;
+    writeln!(
+        stdout,
+        "{}",
+        "─────────────────────────────────────────────────────────────────────".dimmed()
+    )?;
 
     Ok(())
 }
@@ -137,7 +227,7 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
 /// Render JSON format.
 pub fn render_json_report(report: &ValidationReport) -> io::Result<()> {
     let json_str = serde_json::to_string_pretty(report)
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| io::Error::other(e.to_string()))?;
     println!("{}", json_str);
     Ok(())
 }

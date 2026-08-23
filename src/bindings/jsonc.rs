@@ -147,7 +147,8 @@ mod tests {
         }
         "#;
         let cleaned = clean_jsonc(jsonc);
-        let parsed: serde_json::Value = serde_json::from_str(&cleaned).expect("Failed to parse cleaned JSON");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&cleaned).expect("Failed to parse cleaned JSON");
         assert_eq!(parsed["name"], "my-worker");
         assert_eq!(parsed["vars"]["API_KEY"], "https://api.example.com//test");
         assert_eq!(parsed["vars"]["DEBUG"], true);

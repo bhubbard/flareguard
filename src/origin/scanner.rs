@@ -1,7 +1,7 @@
 use crate::origin::cloudflare::partition_ips;
 use crate::origin::confidence::calculate_confidence;
 use crate::origin::dns::{create_resolver, resolve_ips};
-use crate::origin::enumerator::{enumerate_candidate_ips, load_wordlist_file, EnumeratorOptions};
+use crate::origin::enumerator::{EnumeratorOptions, enumerate_candidate_ips, load_wordlist_file};
 use crate::origin::error::{HunterError, Result};
 use crate::origin::models::{
     CandidateIp, ConfidenceLevel, HunterFinding, ProbeResult, ScanReport, ScanSummary,
@@ -50,7 +50,9 @@ pub async fn run_scan(target_domain: &str, options: &ScanOptions) -> Result<Scan
     let root = target_domain.trim().to_lowercase();
 
     if root.is_empty() {
-        return Err(HunterError::InvalidTarget("Target domain cannot be empty".into()));
+        return Err(HunterError::InvalidTarget(
+            "Target domain cannot be empty".into(),
+        ));
     }
 
     let resolver = create_resolver()?;

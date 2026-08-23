@@ -36,7 +36,10 @@ pub struct WranglerConfig {
 
 impl WranglerConfig {
     /// Retrieve bindings for a specific environment (inheriting and overriding root bindings).
-    pub fn get_bindings_for_env(&self, env_name: Option<&str>) -> Result<Vec<DeclaredBinding>, Box<dyn Error + Send + Sync>> {
+    pub fn get_bindings_for_env(
+        &self,
+        env_name: Option<&str>,
+    ) -> Result<Vec<DeclaredBinding>, Box<dyn Error + Send + Sync>> {
         let mut map: HashMap<String, DeclaredBinding> = HashMap::new();
 
         // Load root bindings first
@@ -161,7 +164,10 @@ pub fn extract_bindings_from_object(
     if let Some(kvs) = obj.get("kv_namespaces").and_then(|k| k.as_array()) {
         for kv in kvs {
             if let Some(binding) = kv.get("binding").and_then(|b| b.as_str()) {
-                let id = kv.get("id").and_then(|i| i.as_str()).map(|s| format!("id: {}", s));
+                let id = kv
+                    .get("id")
+                    .and_then(|i| i.as_str())
+                    .map(|s| format!("id: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::KvNamespace,
@@ -177,7 +183,10 @@ pub fn extract_bindings_from_object(
     if let Some(d1s) = obj.get("d1_databases").and_then(|d| d.as_array()) {
         for d1 in d1s {
             if let Some(binding) = d1.get("binding").and_then(|b| b.as_str()) {
-                let db_name = d1.get("database_name").and_then(|n| n.as_str()).map(|s| format!("db: {}", s));
+                let db_name = d1
+                    .get("database_name")
+                    .and_then(|n| n.as_str())
+                    .map(|s| format!("db: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::D1Database,
@@ -193,7 +202,10 @@ pub fn extract_bindings_from_object(
     if let Some(r2s) = obj.get("r2_buckets").and_then(|r| r.as_array()) {
         for r2 in r2s {
             if let Some(binding) = r2.get("binding").and_then(|b| b.as_str()) {
-                let bucket = r2.get("bucket_name").and_then(|n| n.as_str()).map(|s| format!("bucket: {}", s));
+                let bucket = r2
+                    .get("bucket_name")
+                    .and_then(|n| n.as_str())
+                    .map(|s| format!("bucket: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::R2Bucket,
@@ -210,7 +222,10 @@ pub fn extract_bindings_from_object(
         if let Some(arr) = vecs.as_array() {
             for v in arr {
                 if let Some(binding) = v.get("binding").and_then(|b| b.as_str()) {
-                    let idx = v.get("index_name").and_then(|n| n.as_str()).map(|s| format!("index: {}", s));
+                    let idx = v
+                        .get("index_name")
+                        .and_then(|n| n.as_str())
+                        .map(|s| format!("index: {}", s));
                     bindings.push(DeclaredBinding {
                         name: binding.to_string(),
                         binding_type: BindingType::Vectorize,
@@ -220,9 +235,12 @@ pub fn extract_bindings_from_object(
                     });
                 }
             }
-        } else if let Some(v_obj) = vecs.as_object() {
-            if let Some(binding) = v_obj.get("binding").and_then(|b| b.as_str()) {
-                let idx = v_obj.get("index_name").and_then(|n| n.as_str()).map(|s| format!("index: {}", s));
+        } else if let Some(v_obj) = vecs.as_object()
+            && let Some(binding) = v_obj.get("binding").and_then(|b| b.as_str()) {
+                let idx = v_obj
+                    .get("index_name")
+                    .and_then(|n| n.as_str())
+                    .map(|s| format!("index: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::Vectorize,
@@ -231,14 +249,16 @@ pub fn extract_bindings_from_object(
                     details: idx,
                 });
             }
-        }
     }
 
     // 6. hyperdrive
     if let Some(hds) = obj.get("hyperdrive").and_then(|h| h.as_array()) {
         for hd in hds {
             if let Some(binding) = hd.get("binding").and_then(|b| b.as_str()) {
-                let id = hd.get("id").and_then(|i| i.as_str()).map(|s| format!("id: {}", s));
+                let id = hd
+                    .get("id")
+                    .and_then(|i| i.as_str())
+                    .map(|s| format!("id: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::Hyperdrive,
@@ -254,7 +274,10 @@ pub fn extract_bindings_from_object(
     if let Some(services) = obj.get("services").and_then(|s| s.as_array()) {
         for s in services {
             if let Some(binding) = s.get("binding").and_then(|b| b.as_str()) {
-                let svc = s.get("service").and_then(|n| n.as_str()).map(|srv| format!("service: {}", srv));
+                let svc = s
+                    .get("service")
+                    .and_then(|n| n.as_str())
+                    .map(|srv| format!("service: {}", srv));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::Service,
@@ -267,10 +290,16 @@ pub fn extract_bindings_from_object(
     }
 
     // 8. analytics_engine_datasets
-    if let Some(aeds) = obj.get("analytics_engine_datasets").and_then(|a| a.as_array()) {
+    if let Some(aeds) = obj
+        .get("analytics_engine_datasets")
+        .and_then(|a| a.as_array())
+    {
         for a in aeds {
             if let Some(binding) = a.get("binding").and_then(|b| b.as_str()) {
-                let ds = a.get("dataset").and_then(|d| d.as_str()).map(|s| format!("dataset: {}", s));
+                let ds = a
+                    .get("dataset")
+                    .and_then(|d| d.as_str())
+                    .map(|s| format!("dataset: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::AnalyticsEngine,
@@ -283,12 +312,18 @@ pub fn extract_bindings_from_object(
     }
 
     // 9. durable_objects
-    if let Some(do_val) = obj.get("durable_objects").and_then(|d| d.as_object()) {
-        if let Some(bindings_arr) = do_val.get("bindings").and_then(|b| b.as_array()) {
+    if let Some(do_val) = obj.get("durable_objects").and_then(|d| d.as_object())
+        && let Some(bindings_arr) = do_val.get("bindings").and_then(|b| b.as_array()) {
             for b in bindings_arr {
-                let name = b.get("name").or_else(|| b.get("binding")).and_then(|n| n.as_str());
+                let name = b
+                    .get("name")
+                    .or_else(|| b.get("binding"))
+                    .and_then(|n| n.as_str());
                 if let Some(binding_name) = name {
-                    let cls = b.get("class_name").and_then(|c| c.as_str()).map(|s| format!("class: {}", s));
+                    let cls = b
+                        .get("class_name")
+                        .and_then(|c| c.as_str())
+                        .map(|s| format!("class: {}", s));
                     bindings.push(DeclaredBinding {
                         name: binding_name.to_string(),
                         binding_type: BindingType::DurableObject,
@@ -299,14 +334,16 @@ pub fn extract_bindings_from_object(
                 }
             }
         }
-    }
 
     // 10. queues (producers)
-    if let Some(queues) = obj.get("queues").and_then(|q| q.as_object()) {
-        if let Some(producers) = queues.get("producers").and_then(|p| p.as_array()) {
+    if let Some(queues) = obj.get("queues").and_then(|q| q.as_object())
+        && let Some(producers) = queues.get("producers").and_then(|p| p.as_array()) {
             for p in producers {
                 if let Some(binding) = p.get("binding").and_then(|b| b.as_str()) {
-                    let q_name = p.get("queue").and_then(|q| q.as_str()).map(|s| format!("queue: {}", s));
+                    let q_name = p
+                        .get("queue")
+                        .and_then(|q| q.as_str())
+                        .map(|s| format!("queue: {}", s));
                     bindings.push(DeclaredBinding {
                         name: binding.to_string(),
                         binding_type: BindingType::QueueProducer,
@@ -317,14 +354,19 @@ pub fn extract_bindings_from_object(
                 }
             }
         }
-    }
 
     // 11. workflows
     if let Some(wfs) = obj.get("workflows").and_then(|w| w.as_array()) {
         for wf in wfs {
-            let name = wf.get("binding").or_else(|| wf.get("name")).and_then(|n| n.as_str());
+            let name = wf
+                .get("binding")
+                .or_else(|| wf.get("name"))
+                .and_then(|n| n.as_str());
             if let Some(binding_name) = name {
-                let cls = wf.get("class_name").and_then(|c| c.as_str()).map(|s| format!("class: {}", s));
+                let cls = wf
+                    .get("class_name")
+                    .and_then(|c| c.as_str())
+                    .map(|s| format!("class: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding_name.to_string(),
                     binding_type: BindingType::Workflow,
@@ -339,7 +381,10 @@ pub fn extract_bindings_from_object(
     // 12. ai
     if let Some(ai_val) = obj.get("ai") {
         let binding_name = if let Some(ai_obj) = ai_val.as_object() {
-            ai_obj.get("binding").and_then(|b| b.as_str()).unwrap_or("AI")
+            ai_obj
+                .get("binding")
+                .and_then(|b| b.as_str())
+                .unwrap_or("AI")
         } else {
             "AI"
         };
@@ -355,7 +400,10 @@ pub fn extract_bindings_from_object(
     // 13. browser
     if let Some(browser_val) = obj.get("browser") {
         let binding_name = if let Some(b_obj) = browser_val.as_object() {
-            b_obj.get("binding").and_then(|b| b.as_str()).unwrap_or("MYBROWSER")
+            b_obj
+                .get("binding")
+                .and_then(|b| b.as_str())
+                .unwrap_or("MYBROWSER")
         } else {
             "BROWSER"
         };
@@ -372,7 +420,10 @@ pub fn extract_bindings_from_object(
     if let Some(email_val) = obj.get("send_email") {
         if let Some(arr) = email_val.as_array() {
             for em in arr {
-                let name = em.get("name").or_else(|| em.get("binding")).and_then(|n| n.as_str());
+                let name = em
+                    .get("name")
+                    .or_else(|| em.get("binding"))
+                    .and_then(|n| n.as_str());
                 if let Some(binding_name) = name {
                     bindings.push(DeclaredBinding {
                         name: binding_name.to_string(),
@@ -384,7 +435,10 @@ pub fn extract_bindings_from_object(
                 }
             }
         } else if let Some(em_obj) = email_val.as_object() {
-            let name = em_obj.get("name").or_else(|| em_obj.get("binding")).and_then(|n| n.as_str());
+            let name = em_obj
+                .get("name")
+                .or_else(|| em_obj.get("binding"))
+                .and_then(|n| n.as_str());
             if let Some(binding_name) = name {
                 bindings.push(DeclaredBinding {
                     name: binding_name.to_string(),
@@ -401,7 +455,10 @@ pub fn extract_bindings_from_object(
     if let Some(mtls) = obj.get("mtls_certificates").and_then(|m| m.as_array()) {
         for cert in mtls {
             if let Some(binding) = cert.get("binding").and_then(|b| b.as_str()) {
-                let cert_id = cert.get("certificate_id").and_then(|i| i.as_str()).map(|s| format!("cert: {}", s));
+                let cert_id = cert
+                    .get("certificate_id")
+                    .and_then(|i| i.as_str())
+                    .map(|s| format!("cert: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::MtlsCertificate,
@@ -417,7 +474,10 @@ pub fn extract_bindings_from_object(
     if let Some(pipes) = obj.get("pipelines").and_then(|p| p.as_array()) {
         for pipe in pipes {
             if let Some(binding) = pipe.get("binding").and_then(|b| b.as_str()) {
-                let p_name = pipe.get("pipeline").and_then(|n| n.as_str()).map(|s| format!("pipeline: {}", s));
+                let p_name = pipe
+                    .get("pipeline")
+                    .and_then(|n| n.as_str())
+                    .map(|s| format!("pipeline: {}", s));
                 bindings.push(DeclaredBinding {
                     name: binding.to_string(),
                     binding_type: BindingType::Pipeline,
@@ -430,9 +490,12 @@ pub fn extract_bindings_from_object(
     }
 
     // 17. assets
-    if let Some(assets_val) = obj.get("assets").and_then(|a| a.as_object()) {
-        if let Some(binding) = assets_val.get("binding").and_then(|b| b.as_str()) {
-            let dir = assets_val.get("directory").and_then(|d| d.as_str()).map(|s| format!("dir: {}", s));
+    if let Some(assets_val) = obj.get("assets").and_then(|a| a.as_object())
+        && let Some(binding) = assets_val.get("binding").and_then(|b| b.as_str()) {
+            let dir = assets_val
+                .get("directory")
+                .and_then(|d| d.as_str())
+                .map(|s| format!("dir: {}", s));
             bindings.push(DeclaredBinding {
                 name: binding.to_string(),
                 binding_type: BindingType::Assets,
@@ -441,7 +504,6 @@ pub fn extract_bindings_from_object(
                 details: dir,
             });
         }
-    }
 
     // 18. secrets (if defined as array of secret names)
     if let Some(secrets) = obj.get("secrets").and_then(|s| s.as_array()) {
@@ -523,7 +585,8 @@ mod tests {
             }
         }
         "#;
-        let config = parse_wrangler_json(jsonc, "wrangler.jsonc", Path::new("wrangler.jsonc")).unwrap();
+        let config =
+            parse_wrangler_json(jsonc, "wrangler.jsonc", Path::new("wrangler.jsonc")).unwrap();
         let root_bindings = config.get_bindings_for_env(None).unwrap();
         let names: Vec<&str> = root_bindings.iter().map(|b| b.name.as_str()).collect();
 
@@ -568,7 +631,8 @@ mod tests {
         [env.preview]
         vars = { PREVIEW_ONLY = "yes" }
         "#;
-        let config = parse_wrangler_toml(toml_str, "wrangler.toml", Path::new("wrangler.toml")).unwrap();
+        let config =
+            parse_wrangler_toml(toml_str, "wrangler.toml", Path::new("wrangler.toml")).unwrap();
         let root_bindings = config.get_bindings_for_env(None).unwrap();
         let names: Vec<&str> = root_bindings.iter().map(|b| b.name.as_str()).collect();
         assert!(names.contains(&"API_SECRET"));

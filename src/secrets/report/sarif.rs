@@ -172,7 +172,8 @@ pub fn format_sarif_report(
                 driver: SarifDriver {
                     name: "cf-secret-leak-guard".to_string(),
                     version: tool_version.to_string(),
-                    information_uri: "https://github.com/cloudflare/cf-secret-leak-guard".to_string(),
+                    information_uri: "https://github.com/cloudflare/cf-secret-leak-guard"
+                        .to_string(),
                     rules: sarif_rules,
                 },
             },

@@ -2,8 +2,8 @@ use crate::origin::cloudflare::has_cloudflare_headers;
 use crate::origin::error::{HunterError, Result};
 use crate::origin::models::{ProbeMatchDetails, ProbeResult, TargetBaseline};
 use regex::Regex;
-use reqwest::header::{HOST, USER_AGENT};
 use reqwest::Client;
+use reqwest::header::{HOST, USER_AGENT};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::net::IpAddr;
@@ -30,8 +30,7 @@ pub fn extract_html_title(html: &str) -> Option<String> {
         cap.get(1).map(|m| {
             m.as_str()
                 .trim()
-                .replace('\n', " ")
-                .replace('\r', " ")
+                .replace(['\n', '\r'], " ")
                 .split_whitespace()
                 .collect::<Vec<_>>()
                 .join(" ")
@@ -122,7 +121,11 @@ pub async fn probe_candidate_ip(
     target_domain: &str,
     baseline: &TargetBaseline,
 ) -> ProbeResult {
-    let protocol = if port == 443 || port == 8443 { "https" } else { "http" };
+    let protocol = if port == 443 || port == 8443 {
+        "https"
+    } else {
+        "http"
+    };
     let formatted_ip = match ip {
         IpAddr::V4(v4) => v4.to_string(),
         IpAddr::V6(v6) => format!("[{}]", v6),

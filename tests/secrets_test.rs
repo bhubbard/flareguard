@@ -1,7 +1,7 @@
+use flareguard::secrets::ignore::IgnoreFilter;
 use flareguard::secrets::rules::builtin::get_builtin_rules;
 use flareguard::secrets::rules::types::Severity;
-use flareguard::secrets::scanner::{scan_targets, ScannerOptions};
-use flareguard::secrets::ignore::IgnoreFilter;
+use flareguard::secrets::scanner::{ScannerOptions, scan_targets};
 use std::fs;
 use tempfile::tempdir;
 
@@ -9,8 +9,14 @@ use tempfile::tempdir;
 fn test_builtin_rules_exist() {
     let rules = get_builtin_rules();
     assert!(!rules.is_empty(), "Builtin rules should not be empty");
-    assert!(rules.iter().any(|r| r.id == "CF-001"), "Should contain CF-001 (API Token)");
-    assert!(rules.iter().any(|r| r.id == "CF-004"), "Should contain CF-004 (Turnstile Secret)");
+    assert!(
+        rules.iter().any(|r| r.id == "CF-001"),
+        "Should contain CF-001 (API Token)"
+    );
+    assert!(
+        rules.iter().any(|r| r.id == "CF-004"),
+        "Should contain CF-004 (Turnstile Secret)"
+    );
 }
 
 #[test]
@@ -28,7 +34,10 @@ fn test_scan_clean_directory() {
     };
 
     let result = scan_targets(&[dir.path().to_path_buf()], &rules, &ignore, &options);
-    assert!(result.findings.is_empty(), "Clean file should have 0 findings");
+    assert!(
+        result.findings.is_empty(),
+        "Clean file should have 0 findings"
+    );
 }
 
 #[test]

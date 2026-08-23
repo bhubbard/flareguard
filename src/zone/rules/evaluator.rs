@@ -38,7 +38,12 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
     }
 
     // 1. SSL/TLS Mode Check (CF-SSL-001, CF-SSL-002)
-    let ssl_mode = data.settings.ssl.as_deref().unwrap_or("unknown").to_lowercase();
+    let ssl_mode = data
+        .settings
+        .ssl
+        .as_deref()
+        .unwrap_or("unknown")
+        .to_lowercase();
     match ssl_mode.as_str() {
         "off" => {
             check!(
@@ -98,7 +103,11 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
         min_tls_passed,
         format!("TLS {}", min_tls),
         "TLS 1.2 or TLS 1.3",
-        if !min_tls_passed { Some(RiskLevel::High) } else { None },
+        if !min_tls_passed {
+            Some(RiskLevel::High)
+        } else {
+            None
+        },
         if !min_tls_passed { 20 } else { 0 }
     );
 
@@ -167,8 +176,8 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
         if !hsts_enabled { 20 } else { 0 }
     );
 
-    if hsts_enabled {
-        if let Some(hsts) = hsts_opt {
+    if hsts_enabled
+        && let Some(hsts) = hsts_opt {
             let max_age = hsts.max_age.unwrap_or(0);
             let six_months = 15_552_000u64;
             let one_year = 31_536_000u64;
@@ -177,7 +186,11 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
                 check!(
                     "CF-HSTS-002",
                     false,
-                    format!("{} seconds (~{:.1} months)", max_age, (max_age as f64) / 2_592_000.0),
+                    format!(
+                        "{} seconds (~{:.1} months)",
+                        max_age,
+                        (max_age as f64) / 2_592_000.0
+                    ),
                     ">= 15,552,000 seconds (6 months)",
                     Some(RiskLevel::Medium),
                     10
@@ -186,13 +199,24 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
                 check!(
                     "CF-HSTS-002",
                     false,
-                    format!("{} seconds (~{:.1} months)", max_age, (max_age as f64) / 2_592_000.0),
+                    format!(
+                        "{} seconds (~{:.1} months)",
+                        max_age,
+                        (max_age as f64) / 2_592_000.0
+                    ),
                     ">= 31,536,000 seconds (1 year / Preload ready)",
                     Some(RiskLevel::Low),
                     5
                 );
             } else {
-                check!("CF-HSTS-002", true, format!("{}s", max_age), ">= 15,552,000s", None, 0);
+                check!(
+                    "CF-HSTS-002",
+                    true,
+                    format!("{}s", max_age),
+                    ">= 15,552,000s",
+                    None,
+                    0
+                );
             }
 
             let subdomains = hsts.include_subdomains.unwrap_or(false);
@@ -225,7 +249,6 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
                 if !nosniff { 5 } else { 0 }
             );
         }
-    }
 
     // 7. WAF & Managed Rules (CF-WAF-001)
     let waf_active = data.waf.waf_enabled
@@ -235,7 +258,11 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
     check!(
         "CF-WAF-001",
         waf_active,
-        if waf_active { "Active (Managed Rules/Rulesets Configured)" } else { "Disabled / Not Configured" },
+        if waf_active {
+            "Active (Managed Rules/Rulesets Configured)"
+        } else {
+            "Disabled / Not Configured"
+        },
         "Active (Cloudflare Managed Ruleset / OWASP enabled)",
         Some(RiskLevel::High),
         if !waf_active { 20 } else { 0 }
@@ -256,7 +283,11 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
 
     // 9. Rate Limiting (CF-RATE-001)
     let rate_limits_active = !data.rate_limits.rules.is_empty()
-        && data.rate_limits.rules.iter().any(|r| !r.disabled.unwrap_or(false));
+        && data
+            .rate_limits
+            .rules
+            .iter()
+            .any(|r| !r.disabled.unwrap_or(false));
     check!(
         "CF-RATE-001",
         rate_limits_active,
@@ -339,7 +370,11 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
         },
         "Restricted specific IP addresses / narrow CIDRs",
         Some(permissive_severity),
-        if permissive_rule_found { permissive_penalty } else { 0 }
+        if permissive_rule_found {
+            permissive_penalty
+        } else {
+            0
+        }
     );
 
     // 12. Zone Security Level (CF-SEC-002)
@@ -399,13 +434,33 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
     let grade = calculate_grade(score).to_string();
 
     let settings_summary = ZoneSettingsSummary {
-        ssl_mode: data.settings.ssl.clone().unwrap_or_else(|| "none".to_string()),
+        ssl_mode: data
+            .settings
+            .ssl
+            .clone()
+            .unwrap_or_else(|| "none".to_string()),
         min_tls: format!("TLS {}", min_tls),
-        always_https: if always_https { "Enabled".to_string() } else { "Disabled".to_string() },
-        hsts_status: if hsts_enabled { "Enabled".to_string() } else { "Disabled".to_string() },
+        always_https: if always_https {
+            "Enabled".to_string()
+        } else {
+            "Disabled".to_string()
+        },
+        hsts_status: if hsts_enabled {
+            "Enabled".to_string()
+        } else {
+            "Disabled".to_string()
+        },
         dnssec_status: data.dnssec.status.clone(),
-        waf_status: if waf_active { "Active".to_string() } else { "Inactive".to_string() },
-        bot_fight_mode: if bot_active { "Active".to_string() } else { "Inactive".to_string() },
+        waf_status: if waf_active {
+            "Active".to_string()
+        } else {
+            "Inactive".to_string()
+        },
+        bot_fight_mode: if bot_active {
+            "Active".to_string()
+        } else {
+            "Inactive".to_string()
+        },
         security_level: sec_level,
     };
 

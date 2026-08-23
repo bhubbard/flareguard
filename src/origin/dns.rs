@@ -1,6 +1,6 @@
 use crate::origin::error::{HunterError, Result};
-use hickory_resolver::proto::rr::{RData, RecordType};
 use hickory_resolver::TokioResolver;
+use hickory_resolver::proto::rr::{RData, RecordType};
 use ipnet::Ipv4Net;
 use regex::Regex;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};

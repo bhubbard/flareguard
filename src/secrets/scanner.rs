@@ -8,7 +8,7 @@ use walkdir::WalkDir;
 
 use crate::secrets::ignore::IgnoreFilter;
 use crate::secrets::rules::entropy::is_high_entropy_token;
-use crate::secrets::rules::types::{redact_secret, Finding, Rule, Severity};
+use crate::secrets::rules::types::{Finding, Rule, Severity, redact_secret};
 
 /// Known binary extensions that should not be scanned as text bundles.
 const BINARY_EXTENSIONS: &[&str] = &[
@@ -208,7 +208,12 @@ pub fn scan_file(
         }
     };
 
-    let findings = scan_content(&content_str, path.to_string_lossy().as_ref(), rules, ignore_filter);
+    let findings = scan_content(
+        &content_str,
+        path.to_string_lossy().as_ref(),
+        rules,
+        ignore_filter,
+    );
     Ok((file_len as usize, findings))
 }
 
@@ -238,7 +243,8 @@ pub fn scan_content(
                 let match_end = match_start + secret_val.len();
                 start_idx = match_end;
 
-                let (line_num, col_num, snippet) = extract_location_and_snippet(content, match_start, match_end, &rule.name);
+                let (line_num, col_num, snippet) =
+                    extract_location_and_snippet(content, match_start, match_end, &rule.name);
                 findings.push(Finding {
                     rule_id: rule.id.clone(),
                     rule_name: rule.name.clone(),

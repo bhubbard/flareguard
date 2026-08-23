@@ -49,7 +49,12 @@ pub struct Cli {
     pub timeout: u64,
 
     /// Comma-separated list of ports to probe (default: 80,443,8080,8443)
-    #[arg(long, short = 'p', value_name = "PORTS", default_value = "80,443,8080,8443")]
+    #[arg(
+        long,
+        short = 'p',
+        value_name = "PORTS",
+        default_value = "80,443,8080,8443"
+    )]
     pub ports: String,
 
     /// Disable Certificate Transparency (crt.sh) log queries

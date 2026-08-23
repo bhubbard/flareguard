@@ -5,8 +5,8 @@ use crate::zone::models::{
     SettingItem, WafPackage, WafSetting, Zone, ZoneAuditData, ZoneLockdownRule,
     ZoneLockdownSetting, ZoneSettings,
 };
-use anyhow::{bail, Context, Result};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};
+use anyhow::{Context, Result, bail};
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderValue, USER_AGENT};
 use reqwest::{Client, Response, StatusCode};
 use std::future::Future;
 use std::pin::Pin;
@@ -82,14 +82,17 @@ impl CloudflareClient {
         let per_page = 50;
 
         loop {
-            let mut url = format!("{}/zones?page={}&per_page={}", self.base_url, page, per_page);
+            let mut url = format!(
+                "{}/zones?page={}&per_page={}",
+                self.base_url, page, per_page
+            );
 
             if let Some(ref acc) = self.account_id {
                 url.push_str(&format!("&account.id={}", acc));
             }
 
-            if let Some(filter) = zone_filter {
-                if !filter.is_empty() {
+            if let Some(filter) = zone_filter
+                && !filter.is_empty() {
                     // Check if filter looks like a domain name vs zone ID (32 hex characters)
                     if filter.len() == 32 && filter.chars().all(|c| c.is_ascii_hexdigit()) {
                         // Zone ID
@@ -109,7 +112,6 @@ impl CloudflareClient {
                         url.push_str(&format!("&name={}", filter));
                     }
                 }
-            }
 
             let resp = self.get_with_retry(&url).await?;
             if !resp.status().is_success() {
@@ -201,17 +203,18 @@ impl CloudflareClient {
                         }
                     }
                     "security_header" => {
-                        if let Ok(sh) = serde_json::from_value::<SecurityHeaderSetting>(item.value.clone()) {
+                        if let Ok(sh) =
+                            serde_json::from_value::<SecurityHeaderSetting>(item.value.clone())
+                        {
                             settings.security_header = Some(sh);
-                        } else if let Some(obj) = item.value.as_object() {
-                            if let Some(sts) = obj.get("strict_transport_security") {
-                                if let Ok(hsts) = serde_json::from_value::<HstsSetting>(sts.clone()) {
+                        } else if let Some(obj) = item.value.as_object()
+                            && let Some(sts) = obj.get("strict_transport_security")
+                                && let Ok(hsts) = serde_json::from_value::<HstsSetting>(sts.clone())
+                                {
                                     settings.security_header = Some(SecurityHeaderSetting {
                                         strict_transport_security: Some(hsts),
                                     });
                                 }
-                            }
-                        }
                     }
                     "security_level" => {
                         if let Some(v) = item.value.as_str() {
@@ -272,35 +275,27 @@ impl CloudflareClient {
 
         // 1. Check WAF packages
         let pkg_url = format!("{}/zones/{}/firewall/waf/packages", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&pkg_url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<Vec<WafPackage>>>().await {
-                    if let Some(pkgs) = envelope.result {
-                        if !pkgs.is_empty() {
+        if let Ok(resp) = self.get_with_retry(&pkg_url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<Vec<WafPackage>>>().await
+                    && let Some(pkgs) = envelope.result
+                        && !pkgs.is_empty() {
                             waf.waf_enabled = true;
                             waf.managed_rules_active = true;
                             waf.packages = pkgs;
                         }
-                    }
-                }
-            }
-        }
 
         // 2. Check Modern Rulesets
         let ruleset_url = format!("{}/zones/{}/rulesets", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&ruleset_url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<Vec<RulesetInfo>>>().await {
-                    if let Some(rulesets) = envelope.result {
-                        if !rulesets.is_empty() {
+        if let Ok(resp) = self.get_with_retry(&ruleset_url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<Vec<RulesetInfo>>>().await
+                    && let Some(rulesets) = envelope.result
+                        && !rulesets.is_empty() {
                             waf.waf_enabled = true;
                             waf.managed_rules_active = true;
                             waf.rulesets = rulesets;
                         }
-                    }
-                }
-            }
-        }
 
         Ok(waf)
     }
@@ -308,60 +303,54 @@ impl CloudflareClient {
     /// Fetch Bot Management / Bot Fight Mode
     pub async fn fetch_bot_management(&self, zone_id: &str) -> Result<BotManagementSetting> {
         let url = format!("{}/zones/{}/bot_management", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<BotManagementSetting>>().await {
-                    if let Some(bot) = envelope.result {
+        if let Ok(resp) = self.get_with_retry(&url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<BotManagementSetting>>().await
+                    && let Some(bot) = envelope.result {
                         return Ok(bot);
                     }
-                }
-            }
-        }
         Ok(BotManagementSetting::default())
     }
 
     /// Fetch Rate Limiting rules
     pub async fn fetch_rate_limits(&self, zone_id: &str) -> Result<RateLimitSetting> {
         let url = format!("{}/zones/{}/rate_limits", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<Vec<RateLimitRule>>>().await {
+        if let Ok(resp) = self.get_with_retry(&url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<Vec<RateLimitRule>>>().await {
                     return Ok(RateLimitSetting {
                         rules: envelope.result.unwrap_or_default(),
                     });
                 }
-            }
-        }
         Ok(RateLimitSetting::default())
     }
 
     /// Fetch Zone Lockdown rules
     pub async fn fetch_lockdowns(&self, zone_id: &str) -> Result<ZoneLockdownSetting> {
         let url = format!("{}/zones/{}/firewall/lockdowns", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<Vec<ZoneLockdownRule>>>().await {
+        if let Ok(resp) = self.get_with_retry(&url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<Vec<ZoneLockdownRule>>>().await {
                     return Ok(ZoneLockdownSetting {
                         rules: envelope.result.unwrap_or_default(),
                     });
                 }
-            }
-        }
         Ok(ZoneLockdownSetting::default())
     }
 
     /// Fetch IP Access Rules
     pub async fn fetch_ip_access_rules(&self, zone_id: &str) -> Result<IpAccessRulesSetting> {
-        let url = format!("{}/zones/{}/firewall/access_rules/rules", self.base_url, zone_id);
-        if let Ok(resp) = self.get_with_retry(&url).await {
-            if resp.status().is_success() {
-                if let Ok(envelope) = resp.json::<ApiResponse<Vec<IpAccessRule>>>().await {
+        let url = format!(
+            "{}/zones/{}/firewall/access_rules/rules",
+            self.base_url, zone_id
+        );
+        if let Ok(resp) = self.get_with_retry(&url).await
+            && resp.status().is_success()
+                && let Ok(envelope) = resp.json::<ApiResponse<Vec<IpAccessRule>>>().await {
                     return Ok(IpAccessRulesSetting {
                         rules: envelope.result.unwrap_or_default(),
                     });
                 }
-            }
-        }
         Ok(IpAccessRulesSetting::default())
     }
 

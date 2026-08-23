@@ -101,7 +101,10 @@ fn test_flexible_ssl_flagged_as_critical() {
     assert!(crit.is_some(), "CF-SSL-001 should trigger for flexible SSL");
     let finding = crit.unwrap();
     assert_eq!(finding.risk_level, RiskLevel::Critical);
-    assert!(report.score <= 49, "Critical finding must cap score at <= 49");
+    assert!(
+        report.score <= 49,
+        "Critical finding must cap score at <= 49"
+    );
     assert_eq!(report.grade, "F");
 }
 

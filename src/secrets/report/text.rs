@@ -1,6 +1,6 @@
-use colored::Colorize;
 use crate::secrets::rules::types::Severity;
 use crate::secrets::scanner::ScanResult;
+use colored::Colorize;
 
 /// Formats scan findings into human-readable colored terminal output.
 pub fn format_terminal_report(result: &ScanResult, verbose: bool) -> String {

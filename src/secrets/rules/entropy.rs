@@ -34,7 +34,7 @@ pub fn is_high_entropy_token(s: &str, min_entropy: f64) -> bool {
     // Check if it's just all lowercase hex (like git commit hash)
     let is_all_hex = s.chars().all(|c| c.is_ascii_hexdigit());
     let is_all_lower_hex = is_all_hex && s.chars().all(|c| !c.is_ascii_uppercase());
-    
+
     // If it's a 40-char string that is purely lowercase hex, it's very often a git sha or build hash
     if s.len() == 40 && is_all_lower_hex {
         return false;

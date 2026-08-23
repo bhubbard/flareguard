@@ -23,7 +23,10 @@ impl std::str::FromStr for OutputFormat {
             "json" => Ok(OutputFormat::Json),
             "sarif" => Ok(OutputFormat::Sarif),
             "html" => Ok(OutputFormat::Html),
-            _ => Err(format!("Unsupported output format '{}'. Valid: text, json, sarif, html", s)),
+            _ => Err(format!(
+                "Unsupported output format '{}'. Valid: text, json, sarif, html",
+                s
+            )),
         }
     }
 }
@@ -42,16 +45,45 @@ pub fn render_report(report: &ScanReport, format: OutputFormat) -> Result<String
 pub fn render_text(report: &ScanReport) -> String {
     let mut out = String::new();
 
-    out.push_str("\n");
-    out.push_str(&"╔══════════════════════════════════════════════════════════════════════════════╗\n".bright_cyan().bold().to_string());
-    out.push_str(&"║                      CLOUDFLARE ORIGIN HUNTER (v0.1.0)                       ║\n".bright_cyan().bold().to_string());
-    out.push_str(&"╚══════════════════════════════════════════════════════════════════════════════╝\n".bright_cyan().bold().to_string());
-    out.push_str("\n");
+    out.push('\n');
+    out.push_str(
+        &"╔══════════════════════════════════════════════════════════════════════════════╗\n"
+            .bright_cyan()
+            .bold()
+            .to_string(),
+    );
+    out.push_str(
+        &"║                      CLOUDFLARE ORIGIN HUNTER (v0.1.0)                       ║\n"
+            .bright_cyan()
+            .bold()
+            .to_string(),
+    );
+    out.push_str(
+        &"╚══════════════════════════════════════════════════════════════════════════════╝\n"
+            .bright_cyan()
+            .bold()
+            .to_string(),
+    );
+    out.push('\n');
 
-    out.push_str(&format!("  🎯 Target Domain:      {}\n", report.summary.target_domain.bright_yellow().bold()));
-    out.push_str(&format!("  🕒 Scanned At:          {}\n", report.summary.scanned_at.format("%Y-%m-%d %H:%M:%S UTC").to_string().cyan()));
-    out.push_str(&format!("  ⏱️  Scan Duration:       {:.2}s\n", report.summary.duration_seconds));
-    
+    out.push_str(&format!(
+        "  🎯 Target Domain:      {}\n",
+        report.summary.target_domain.bright_yellow().bold()
+    ));
+    out.push_str(&format!(
+        "  🕒 Scanned At:          {}\n",
+        report
+            .summary
+            .scanned_at
+            .format("%Y-%m-%d %H:%M:%S UTC")
+            .to_string()
+            .cyan()
+    ));
+    out.push_str(&format!(
+        "  ⏱️  Scan Duration:       {:.2}s\n",
+        report.summary.duration_seconds
+    ));
+
     let cf_status = if report.summary.is_behind_cloudflare {
         "PROXIED BEHIND CLOUDFLARE".bright_green().bold()
     } else {
@@ -66,20 +98,40 @@ pub fn render_text(report: &ScanReport) -> String {
         .map(|ip| ip.to_string())
         .collect::<Vec<_>>()
         .join(", ");
-    out.push_str(&format!("  🌐 Cloudflare Edge IPs: {}\n", if edge_ips_str.is_empty() { "None".dimmed().to_string() } else { edge_ips_str.cyan().to_string() }));
+    out.push_str(&format!(
+        "  🌐 Cloudflare Edge IPs: {}\n",
+        if edge_ips_str.is_empty() {
+            "None".dimmed().to_string()
+        } else {
+            edge_ips_str.cyan().to_string()
+        }
+    ));
 
     if let Some(ref title) = report.baseline.html_title {
         out.push_str(&format!("  📄 Baseline Title:     {}\n", title.dimmed()));
     }
     if let Some(ref hash) = report.baseline.body_sha256 {
-        out.push_str(&format!("  🔑 Baseline SHA-256:   {}\n", hash[..16].dimmed()));
+        out.push_str(&format!(
+            "  🔑 Baseline SHA-256:   {}\n",
+            hash[..16].dimmed()
+        ));
     }
 
-    out.push_str("\n");
-    out.push_str(&"─── CANDIDATE ORIGIN IP FINDINGS ───────────────────────────────────────────────\n".bright_white().bold().to_string());
+    out.push('\n');
+    out.push_str(
+        &"─── CANDIDATE ORIGIN IP FINDINGS ───────────────────────────────────────────────\n"
+            .bright_white()
+            .bold()
+            .to_string(),
+    );
 
     if report.findings.is_empty() {
-        out.push_str(&format!("  {}\n\n", "✅ No unmasked origin IP addresses detected. Target is well-protected.".bright_green().bold()));
+        out.push_str(&format!(
+            "  {}\n\n",
+            "✅ No unmasked origin IP addresses detected. Target is well-protected."
+                .bright_green()
+                .bold()
+        ));
     } else {
         let mut table = Table::new();
         table.load_preset(UTF8_FULL);
@@ -97,15 +149,21 @@ pub fn render_text(report: &ScanReport) -> String {
 
         for finding in &report.findings {
             let conf_cell = match finding.confidence {
-                ConfidenceLevel::Confirmed => Cell::new("CONFIRMED").fg(Color::Red).add_attribute(Attribute::Bold),
-                ConfidenceLevel::High => Cell::new("HIGH").fg(Color::Yellow).add_attribute(Attribute::Bold),
+                ConfidenceLevel::Confirmed => Cell::new("CONFIRMED")
+                    .fg(Color::Red)
+                    .add_attribute(Attribute::Bold),
+                ConfidenceLevel::High => Cell::new("HIGH")
+                    .fg(Color::Yellow)
+                    .add_attribute(Attribute::Bold),
                 ConfidenceLevel::Medium => Cell::new("MEDIUM").fg(Color::Cyan),
                 ConfidenceLevel::Low => Cell::new("LOW").fg(Color::DarkGrey),
             };
 
             let score_str = format!("{}%", finding.confidence_score);
             let score_cell = match finding.confidence {
-                ConfidenceLevel::Confirmed => Cell::new(&score_str).fg(Color::Red).add_attribute(Attribute::Bold),
+                ConfidenceLevel::Confirmed => Cell::new(&score_str)
+                    .fg(Color::Red)
+                    .add_attribute(Attribute::Bold),
                 ConfidenceLevel::High => Cell::new(&score_str).fg(Color::Yellow),
                 _ => Cell::new(&score_str),
             };
@@ -134,18 +192,42 @@ pub fn render_text(report: &ScanReport) -> String {
         // Risk Summary Stats
         out.push_str(&format!(
             "  📊 Origin Leak Summary: {} Confirmed, {} High, {} Medium, {} Low\n\n",
-            report.summary.origins_confirmed.to_string().bright_red().bold(),
-            report.summary.high_confidence_origins.to_string().bright_yellow().bold(),
-            report.summary.medium_confidence_origins.to_string().bright_cyan(),
+            report
+                .summary
+                .origins_confirmed
+                .to_string()
+                .bright_red()
+                .bold(),
+            report
+                .summary
+                .high_confidence_origins
+                .to_string()
+                .bright_yellow()
+                .bold(),
+            report
+                .summary
+                .medium_confidence_origins
+                .to_string()
+                .bright_cyan(),
             report.summary.low_confidence_origins.to_string().dimmed()
         ));
     }
 
     // Remediation Plan Section
     if report.summary.is_origin_leaked {
-        out.push_str(&"─── ACTIONABLE REMEDIATION STEPS ──────────────────────────────────────────────\n".bright_red().bold().to_string());
+        out.push_str(
+            &"─── ACTIONABLE REMEDIATION STEPS ──────────────────────────────────────────────\n"
+                .bright_red()
+                .bold()
+                .to_string(),
+        );
         for step in &report.remediation {
-            out.push_str(&format!("\n  [{}] {} ({})\n", step.id.bold().yellow(), step.title.bold().white(), step.priority.bright_red()));
+            out.push_str(&format!(
+                "\n  [{}] {} ({})\n",
+                step.id.bold().yellow(),
+                step.title.bold().white(),
+                step.priority.bright_red()
+            ));
             out.push_str(&format!("  📝 {}\n", step.description));
             if !step.commands.is_empty() {
                 out.push_str("  💻 Commands:\n");
@@ -155,7 +237,7 @@ pub fn render_text(report: &ScanReport) -> String {
             }
             out.push_str(&format!("  🔗 Docs: {}\n", step.doc_url.dimmed()));
         }
-        out.push_str("\n");
+        out.push('\n');
     }
 
     out
@@ -172,10 +254,26 @@ pub fn render_sarif(report: &ScanReport) -> Result<String> {
 
     for finding in &report.findings {
         let (rule_id, level, title) = match finding.confidence {
-            ConfidenceLevel::Confirmed => ("CF-ORIGIN-LEAK-CONFIRMED", "error", "Cloudflare Origin IP Directly Exposed (Confirmed)"),
-            ConfidenceLevel::High => ("CF-ORIGIN-LEAK-HIGH", "error", "Cloudflare Origin IP Likely Exposed (High Confidence)"),
-            ConfidenceLevel::Medium => ("CF-ORIGIN-LEAK-MEDIUM", "warning", "Potential Cloudflare Origin IP Exposed (Medium Confidence)"),
-            ConfidenceLevel::Low => ("CF-ORIGIN-LEAK-LOW", "note", "Unverified Candidate Origin IP (Low Confidence)"),
+            ConfidenceLevel::Confirmed => (
+                "CF-ORIGIN-LEAK-CONFIRMED",
+                "error",
+                "Cloudflare Origin IP Directly Exposed (Confirmed)",
+            ),
+            ConfidenceLevel::High => (
+                "CF-ORIGIN-LEAK-HIGH",
+                "error",
+                "Cloudflare Origin IP Likely Exposed (High Confidence)",
+            ),
+            ConfidenceLevel::Medium => (
+                "CF-ORIGIN-LEAK-MEDIUM",
+                "warning",
+                "Potential Cloudflare Origin IP Exposed (Medium Confidence)",
+            ),
+            ConfidenceLevel::Low => (
+                "CF-ORIGIN-LEAK-LOW",
+                "note",
+                "Unverified Candidate Origin IP (Low Confidence)",
+            ),
         };
 
         let result_obj = json!({
@@ -478,7 +576,11 @@ pub fn render_html(report: &ScanReport) -> String {
         report.summary.origins_confirmed,
         report.summary.high_confidence_origins,
         report.summary.medium_confidence_origins,
-        if report.summary.is_behind_cloudflare { "Cloudflare Proxied" } else { "Direct" },
+        if report.summary.is_behind_cloudflare {
+            "Cloudflare Proxied"
+        } else {
+            "Direct"
+        },
         rows,
         rem_cards
     )

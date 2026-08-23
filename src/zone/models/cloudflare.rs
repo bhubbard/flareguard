@@ -190,15 +190,15 @@ pub struct IpAccessRulesSetting {
 /// Core Zone Settings (SSL, Min TLS, Always HTTPS, etc.)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct ZoneSettings {
-    pub ssl: Option<String>,                      // "off", "flexible", "full", "strict"
-    pub min_tls_version: Option<String>,          // "1.0", "1.1", "1.2", "1.3"
-    pub tls_1_3: Option<String>,                  // "on", "off", "zrt"
-    pub always_use_https: Option<String>,          // "on", "off"
+    pub ssl: Option<String>,              // "off", "flexible", "full", "strict"
+    pub min_tls_version: Option<String>,  // "1.0", "1.1", "1.2", "1.3"
+    pub tls_1_3: Option<String>,          // "on", "off", "zrt"
+    pub always_use_https: Option<String>, // "on", "off"
     pub automatic_https_rewrites: Option<String>, // "on", "off"
     pub opportunistic_encryption: Option<String>, // "on", "off"
     pub security_header: Option<SecurityHeaderSetting>,
-    pub security_level: Option<String>,           // "essentially_off", "low", "medium", "high", "under_attack"
-    pub browser_check: Option<String>,            // "on", "off"
+    pub security_level: Option<String>, // "essentially_off", "low", "medium", "high", "under_attack"
+    pub browser_check: Option<String>,  // "on", "off"
     pub challenge_ttl: Option<i64>,
     pub brotli: Option<String>,
     pub early_hints: Option<String>,

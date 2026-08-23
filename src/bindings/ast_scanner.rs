@@ -141,7 +141,9 @@ impl<'a> AstScanner<'a> {
             Statement::ForStatement(s) => {
                 if let Some(init) = &s.init {
                     match init {
-                        ForStatementInit::VariableDeclaration(d) => self.walk_variable_declaration(d),
+                        ForStatementInit::VariableDeclaration(d) => {
+                            self.walk_variable_declaration(d)
+                        }
                         _ => {
                             if let Some(e) = init.as_expression() {
                                 self.walk_expression(e);
@@ -206,22 +208,20 @@ impl<'a> AstScanner<'a> {
             Statement::ExportDeclaration(d) => {
                 self.walk_declaration(&d.declaration);
             }
-            Statement::ExportDefaultDeclaration(d) => {
-                match &d.declaration {
-                    ExportDefaultDeclarationKind::FunctionDeclaration(f) => {
-                        let name = f.id.as_ref().map(|id| id.name.as_str());
-                        self.walk_function(f, name);
-                    }
-                    ExportDefaultDeclarationKind::ClassDeclaration(c) => {
-                        self.walk_class(c);
-                    }
-                    _ => {
-                        if let Some(expr) = d.declaration.as_expression() {
-                            self.walk_expression(expr);
-                        }
+            Statement::ExportDefaultDeclaration(d) => match &d.declaration {
+                ExportDefaultDeclarationKind::FunctionDeclaration(f) => {
+                    let name = f.id.as_ref().map(|id| id.name.as_str());
+                    self.walk_function(f, name);
+                }
+                ExportDefaultDeclarationKind::ClassDeclaration(c) => {
+                    self.walk_class(c);
+                }
+                _ => {
+                    if let Some(expr) = d.declaration.as_expression() {
+                        self.walk_expression(expr);
                     }
                 }
-            }
+            },
             _ => {}
         }
     }
@@ -253,12 +253,17 @@ impl<'a> AstScanner<'a> {
                         for prop in &obj.properties {
                             if let Some(name) = prop.key.name() {
                                 let raw = format!("const {{ {} }} = {}", name, env_expr_str);
-                                self.record_access(&name, prop.span, AccessKind::Destructured, &raw);
+                                self.record_access(
+                                    &name,
+                                    prop.span,
+                                    AccessKind::Destructured,
+                                    &raw,
+                                );
                             }
                         }
                     }
-                } else if is_process_env(init) {
-                    if let BindingPattern::ObjectPattern(obj) = &declarator.id {
+                } else if is_process_env(init)
+                    && let BindingPattern::ObjectPattern(obj) = &declarator.id {
                         for prop in &obj.properties {
                             if let Some(name) = prop.key.name() {
                                 let raw = format!("const {{ {} }} = process.env", name);
@@ -266,7 +271,6 @@ impl<'a> AstScanner<'a> {
                             }
                         }
                     }
-                }
 
                 match init {
                     Expression::ArrowFunctionExpression(f) => {
@@ -284,10 +288,20 @@ impl<'a> AstScanner<'a> {
     }
 
     fn walk_function(&mut self, func: &Function, func_name: Option<&str>) {
-        let is_worker_handler = func_name.map_or(false, |name| {
+        let is_worker_handler = func_name.is_some_and(|name| {
             matches!(
                 name,
-                "fetch" | "scheduled" | "queue" | "email" | "tail" | "trace" | "onRequest" | "onRequestGet" | "onRequestPost" | "onRequestPut" | "onRequestDelete"
+                "fetch"
+                    | "scheduled"
+                    | "queue"
+                    | "email"
+                    | "tail"
+                    | "trace"
+                    | "onRequest"
+                    | "onRequestGet"
+                    | "onRequestPost"
+                    | "onRequestPut"
+                    | "onRequestDelete"
             )
         });
 
@@ -300,15 +314,26 @@ impl<'a> AstScanner<'a> {
                                 for nested_prop in &nested_obj.properties {
                                     if let Some(nested_name) = nested_prop.key.name() {
                                         let raw = format!("{{ env: {{ {} }} }}", nested_name);
-                                        self.record_access(&nested_name, nested_prop.span, AccessKind::ParamDestructured, &raw);
+                                        self.record_access(
+                                            &nested_name,
+                                            nested_prop.span,
+                                            AccessKind::ParamDestructured,
+                                            &raw,
+                                        );
                                     }
                                 }
                             }
-                        } else if (param_idx == 1 && (is_worker_handler || func.params.items.len() >= 2))
+                        } else if (param_idx == 1
+                            && (is_worker_handler || func.params.items.len() >= 2))
                             || (param_idx == 0 && is_worker_handler)
                         {
                             let raw = format!("handler(req, {{ {} }}, ctx)", prop_name);
-                            self.record_access(&prop_name, prop.span, AccessKind::ParamDestructured, &raw);
+                            self.record_access(
+                                &prop_name,
+                                prop.span,
+                                AccessKind::ParamDestructured,
+                                &raw,
+                            );
                         }
                     }
                 }
@@ -365,13 +390,12 @@ impl<'a> AstScanner<'a> {
                         self.record_access(&prop_name, m.span, AccessKind::DirectMember, &raw);
                         return;
                     }
-                } else if is_process_env(&m.object) {
-                    if let Some(prop_name) = extract_string_literal(&m.expression) {
+                } else if is_process_env(&m.object)
+                    && let Some(prop_name) = extract_string_literal(&m.expression) {
                         let raw = format!("process.env[\"{}\"]", prop_name);
                         self.record_access(&prop_name, m.span, AccessKind::ProcessEnv, &raw);
                         return;
                     }
-                }
                 self.walk_expression(&m.object);
                 self.walk_expression(&m.expression);
             }
@@ -382,16 +406,18 @@ impl<'a> AstScanner<'a> {
                     let method_name = m.property.name.as_str();
                     if method_name == "get" {
                         // Check if object is `c` (Hono context) or `env`
-                        if is_ident_name(&m.object, "c") || is_env_source(&m.object).is_some() {
-                            if let Some(first_arg) = call.arguments.first() {
-                                if let Some(arg_expr) = first_arg.as_expression() {
-                                    if let Some(key_name) = extract_string_literal(arg_expr) {
+                        if (is_ident_name(&m.object, "c") || is_env_source(&m.object).is_some())
+                            && let Some(first_arg) = call.arguments.first()
+                                && let Some(arg_expr) = first_arg.as_expression()
+                                    && let Some(key_name) = extract_string_literal(arg_expr) {
                                         let raw = format!("c.get('{}')", key_name);
-                                        self.record_access(&key_name, call.span, AccessKind::HelperCall, &raw);
+                                        self.record_access(
+                                            &key_name,
+                                            call.span,
+                                            AccessKind::HelperCall,
+                                            &raw,
+                                        );
                                     }
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -415,17 +441,24 @@ impl<'a> AstScanner<'a> {
 
             // Assignment expression: ({ MY_KV } = env)
             Expression::AssignmentExpression(assign) => {
-                if let Some(env_expr_str) = is_env_source(&assign.right) {
-                    if let AssignmentTarget::ObjectAssignmentTarget(obj) = &assign.left {
+                if let Some(env_expr_str) = is_env_source(&assign.right)
+                    && let AssignmentTarget::ObjectAssignmentTarget(obj) = &assign.left {
                         for prop in &obj.properties {
-                            if let AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(ident) = prop {
+                            if let AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
+                                ident,
+                            ) = prop
+                            {
                                 let name = ident.binding.name.as_str();
                                 let raw = format!("({{ {} }} = {})", name, env_expr_str);
-                                self.record_access(name, ident.span, AccessKind::Destructured, &raw);
+                                self.record_access(
+                                    name,
+                                    ident.span,
+                                    AccessKind::Destructured,
+                                    &raw,
+                                );
                             }
                         }
                     }
-                }
                 self.walk_expression(&assign.right);
             }
 
@@ -540,10 +573,20 @@ impl<'a> AstScanner<'a> {
     }
 
     fn walk_arrow_function(&mut self, func: &ArrowFunctionExpression, func_name: Option<&str>) {
-        let is_worker_handler = func_name.map_or(false, |name| {
+        let is_worker_handler = func_name.is_some_and(|name| {
             matches!(
                 name,
-                "fetch" | "scheduled" | "queue" | "email" | "tail" | "trace" | "onRequest" | "onRequestGet" | "onRequestPost" | "onRequestPut" | "onRequestDelete"
+                "fetch"
+                    | "scheduled"
+                    | "queue"
+                    | "email"
+                    | "tail"
+                    | "trace"
+                    | "onRequest"
+                    | "onRequestGet"
+                    | "onRequestPost"
+                    | "onRequestPut"
+                    | "onRequestDelete"
             )
         });
 
@@ -556,15 +599,26 @@ impl<'a> AstScanner<'a> {
                                 for nested_prop in &nested_obj.properties {
                                     if let Some(nested_name) = nested_prop.key.name() {
                                         let raw = format!("{{ env: {{ {} }} }}", nested_name);
-                                        self.record_access(&nested_name, nested_prop.span, AccessKind::ParamDestructured, &raw);
+                                        self.record_access(
+                                            &nested_name,
+                                            nested_prop.span,
+                                            AccessKind::ParamDestructured,
+                                            &raw,
+                                        );
                                     }
                                 }
                             }
-                        } else if (param_idx == 1 && (is_worker_handler || func.params.items.len() >= 2))
+                        } else if (param_idx == 1
+                            && (is_worker_handler || func.params.items.len() >= 2))
                             || (param_idx == 0 && is_worker_handler)
                         {
                             let raw = format!("handler(req, {{ {} }}, ctx)", prop_name);
-                            self.record_access(&prop_name, prop.span, AccessKind::ParamDestructured, &raw);
+                            self.record_access(
+                                &prop_name,
+                                prop.span,
+                                AccessKind::ParamDestructured,
+                                &raw,
+                            );
                         }
                     }
                 }
@@ -607,13 +661,12 @@ impl<'a> AstScanner<'a> {
                         self.record_access(&prop_name, c.span, AccessKind::DirectMember, &raw);
                         return;
                     }
-                } else if is_process_env(&c.object) {
-                    if let Some(prop_name) = extract_string_literal(&c.expression) {
+                } else if is_process_env(&c.object)
+                    && let Some(prop_name) = extract_string_literal(&c.expression) {
                         let raw = format!("process.env[\"{}\"]", prop_name);
                         self.record_access(&prop_name, c.span, AccessKind::ProcessEnv, &raw);
                         return;
                     }
-                }
                 self.walk_expression(&c.object);
                 self.walk_expression(&c.expression);
             }
@@ -683,15 +736,19 @@ fn get_member_chain(expr: &Expression) -> String {
 fn extract_string_literal(expr: &Expression) -> Option<String> {
     match expr {
         Expression::StringLiteral(s) => Some(s.value.to_string()),
-        Expression::TemplateLiteral(t) if t.expressions.is_empty() && !t.quasis.is_empty() => {
-            t.quasis.first().and_then(|q| q.value.cooked.as_ref()).map(|c| c.to_string())
-        }
+        Expression::TemplateLiteral(t) if t.expressions.is_empty() && !t.quasis.is_empty() => t
+            .quasis
+            .first()
+            .and_then(|q| q.value.cooked.as_ref())
+            .map(|c| c.to_string()),
         _ => None,
     }
 }
 
 /// Parse and scan a source file (supporting TS, JS, TSX, JSX, and Astro).
-pub fn scan_source_file(path: &Path) -> Result<Vec<BindingAccess>, Box<dyn std::error::Error + Send + Sync>> {
+pub fn scan_source_file(
+    path: &Path,
+) -> Result<Vec<BindingAccess>, Box<dyn std::error::Error + Send + Sync>> {
     let content = fs::read_to_string(path)
         .map_err(|e| format!("Failed to read source file {}: {}", path.display(), e))?;
     let path_str = path.to_string_lossy().to_string();
@@ -733,8 +790,11 @@ pub fn scan_astro_content(
 
     // 1. Extract Frontmatter (between first --- and second ---)
     let lines: Vec<&str> = source_text.lines().collect();
-    if let Some(first_fence) = lines.iter().position(|l| l.trim() == "---") {
-        if let Some(second_fence_offset) = lines[first_fence + 1..].iter().position(|l| l.trim() == "---") {
+    if let Some(first_fence) = lines.iter().position(|l| l.trim() == "---")
+        && let Some(second_fence_offset) = lines[first_fence + 1..]
+            .iter()
+            .position(|l| l.trim() == "---")
+        {
             let second_fence = first_fence + 1 + second_fence_offset;
 
             // Build padded source so line numbers match the .astro file exactly
@@ -742,15 +802,14 @@ pub fn scan_astro_content(
             for _ in 0..first_fence + 1 {
                 padded_script.push('\n');
             }
-            for i in (first_fence + 1)..second_fence {
-                padded_script.push_str(lines[i]);
+            for line in lines.iter().take(second_fence).skip(first_fence + 1) {
+                padded_script.push_str(line);
                 padded_script.push('\n');
             }
 
             let fm_accesses = scan_code_content(file_path, &padded_script, SourceType::ts())?;
             all_accesses.extend(fm_accesses);
         }
-    }
 
     // 2. Extract <script> tags
     let mut script_start = 0;
@@ -772,7 +831,9 @@ pub fn scan_astro_content(
                 }
                 padded_script.push_str(script_body);
 
-                if let Ok(script_accesses) = scan_code_content(file_path, &padded_script, SourceType::ts()) {
+                if let Ok(script_accesses) =
+                    scan_code_content(file_path, &padded_script, SourceType::ts())
+                {
                     all_accesses.extend(script_accesses);
                 }
 

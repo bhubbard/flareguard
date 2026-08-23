@@ -106,7 +106,9 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
                     RateLimitRule {
                         id: "rl_login_bruteforce".to_string(),
                         disabled: Some(false),
-                        description: Some("Protect /api/v1/auth/login from brute force".to_string()),
+                        description: Some(
+                            "Protect /api/v1/auth/login from brute force".to_string(),
+                        ),
                         threshold: Some(5),
                         period: Some(60),
                         action: Some("challenge".to_string()),
@@ -146,7 +148,6 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
                 }],
             },
         },
-
         // Zone 2: Moderate / Good E-Commerce Shop (Score: ~85, Grade: B)
         ZoneAuditData {
             zone: Zone {
@@ -241,7 +242,6 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
             lockdowns: ZoneLockdownSetting::default(),
             ip_access_rules: IpAccessRulesSetting::default(),
         },
-
         // Zone 3: Severely Insecure Legacy Portal (Score: < 20, Grade: F, Multiple Critical & High)
         ZoneAuditData {
             zone: Zone {
@@ -270,7 +270,7 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
             settings: ZoneSettings {
                 ssl: Some("flexible".to_string()), // CRITICAL: CF-SSL-001 (-30 pts, cap at 49)
                 min_tls_version: Some("1.0".to_string()), // HIGH: CF-TLS-001 (-20 pts)
-                tls_1_3: Some("off".to_string()), // LOW: CF-TLS-002 (-5 pts)
+                tls_1_3: Some("off".to_string()),  // LOW: CF-TLS-002 (-5 pts)
                 always_use_https: Some("off".to_string()), // HIGH: CF-HTTPS-001 (-20 pts)
                 automatic_https_rewrites: Some("off".to_string()), // MEDIUM: CF-HTTPS-002 (-10 pts)
                 opportunistic_encryption: Some("off".to_string()),
@@ -284,7 +284,7 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
                     }),
                 }),
                 security_level: Some("essentially_off".to_string()), // HIGH: CF-SEC-002 (-15 pts)
-                browser_check: Some("off".to_string()), // LOW: CF-SEC-003 (-5 pts)
+                browser_check: Some("off".to_string()),              // LOW: CF-SEC-003 (-5 pts)
                 challenge_ttl: Some(86400),
                 brotli: Some("off".to_string()),
                 early_hints: Some("off".to_string()),
@@ -320,7 +320,6 @@ pub fn get_mock_zones() -> Vec<ZoneAuditData> {
                 }],
             },
         },
-
         // Zone 4: Development / Staging Gateway (Score: ~55-65, Grade: D)
         ZoneAuditData {
             zone: Zone {
@@ -462,8 +461,8 @@ impl ZoneDataProvider for MockZoneProvider {
         zone_filter: Option<&'a str>,
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ZoneAuditData>>> + Send + 'a>> {
         Box::pin(async move {
-            if let Some(filter) = zone_filter {
-                if !filter.is_empty() {
+            if let Some(filter) = zone_filter
+                && !filter.is_empty() {
                     let filtered: Vec<ZoneAuditData> = self
                         .zones
                         .iter()
@@ -476,7 +475,6 @@ impl ZoneDataProvider for MockZoneProvider {
                         .collect();
                     return Ok(filtered);
                 }
-            }
             Ok(self.zones.clone())
         })
     }

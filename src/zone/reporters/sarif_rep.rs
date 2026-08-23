@@ -1,7 +1,7 @@
 use crate::zone::models::{
     AggregateAuditReport, RiskLevel, SarifArtifactLocation, SarifDriver, SarifLocation,
-    SarifMessage, SarifPhysicalLocation, SarifProperties, SarifReport, SarifResult, SarifRun,
-    SarifRuleConfiguration, SarifRuleDescriptor, SarifTool,
+    SarifMessage, SarifPhysicalLocation, SarifProperties, SarifReport, SarifResult,
+    SarifRuleConfiguration, SarifRuleDescriptor, SarifRun, SarifTool,
 };
 use crate::zone::rules::definitions::ALL_RULES;
 use anyhow::Result;
