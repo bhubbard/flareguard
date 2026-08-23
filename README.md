@@ -20,6 +20,27 @@
 
 ---
 
+
+## 🔑 Supported Secret Detection Rules (15 Built-in Rules)
+
+| Rule ID | Name | Severity | Description |
+|---|---|---|---|
+| **CF-001** | Cloudflare API Token | `CRITICAL` | Scoped API token (40 characters) |
+| **CF-002** | Cloudflare Global API Key | `CRITICAL` | Legacy global account key (37-hex characters) |
+| **CF-003** | Cloudflare Origin CA Key | `CRITICAL` | Origin certificate creation key (`v1.0-` prefix) |
+| **CF-004** | Cloudflare Turnstile Secret Key | `CRITICAL` | Server-side verification secret (`0x4AAAA...`) |
+| **CF-005** | Zero Trust Access Service Token | `CRITICAL` | Service token secret for Zero Trust policies |
+| **CF-006** | Cloudflare Account ID Context | `MEDIUM` | Account ID assigned in sensitive config contexts |
+| **CF-007** | R2 / S3 Secret Access Key | `CRITICAL` | Object storage secret key (40 characters) |
+| **CF-008** | Database URI / D1 Secret | `CRITICAL` | Embedded Postgres/MySQL connection string or D1 token |
+| **CF-009** | Standalone High-Entropy Token | `HIGH` | High Shannon-entropy token matching Cloudflare signatures |
+| **CF-010** | Hyperdrive Origin Secret | `CRITICAL` | Database credentials or pooling passwords |
+| **CF-011** | Cloudflare Tunnel Token | `CRITICAL` | `cloudflared` ingress tunnel credentials (`eyJh...`) |
+| **CF-012** | AI Gateway & LLM API Key | `CRITICAL` | AI Gateway token, OpenAI (`sk-proj`), Anthropic (`sk-ant`), Gemini (`AIzaSy`) |
+| **CF-013** | Vectorize Admin Secret | `CRITICAL` | Vector database index management key |
+| **CF-014** | Email / MailChannels Secret | `HIGH` | DKIM / transactional mail dispatch credentials |
+| **CF-015** | SSL/TLS Private Key | `CRITICAL` | Unencrypted RSA/EC private key (`BEGIN PRIVATE KEY`) |
+
 ## 🚀 Installation & Quickstart
 
 ```bash

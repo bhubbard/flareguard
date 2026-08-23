@@ -8,7 +8,7 @@ pub fn get_builtin_rules() -> Vec<Rule> {
         Rule::new_regex(
             "CF-001",
             "Cloudflare API Token",
-            "Detects Cloudflare API Tokens (40-char token) referenced in client bundles",
+            "Detects Cloudflare API Tokens (40-char token) referenced in client bundles or configuration",
             Severity::Critical,
             Regex::new(r#"(?i)(?:cloudflare|cf)[-_]?(?:api[-_]?)?token\s*[:=]\s*['"]?([a-zA-Z0-9_-]{40})['"]?"#)
                 .expect("Valid regex for CF-001"),
@@ -87,7 +87,7 @@ pub fn get_builtin_rules() -> Vec<Rule> {
             "Database Connection String / D1 Secret",
             "Detects embedded database connection strings or D1 credentials in client bundles",
             Severity::Critical,
-            Regex::new(r#"(?i)\b(?:postgres|postgresql|mysql|redis|mongodb|couchdb|d1):\/\/[^\s:@/]+:[^\s:@]+@[a-zA-Z0-9_.-]+(?::[0-9]+)?(?:\/[^\s'"`;]*)?|\b(?:d1[-_]?(?:token|api[-_]?token|database[-_]?token))\s*[:=]\s*['"]?([a-zA-Z0-9_-]{32,64})['"]?"#)
+            Regex::new(r#"(?i)\b(?:postgres|postgresql|mysql|redis|mongodb|couchdb|d1)://[^\s:@/]+:[^\s:@]+@[a-zA-Z0-9_.-]+(?::[0-9]+)?(?:/[^\s'"`;]*)?|\b(?:d1[-_]?(?:token|api[-_]?token|database[-_]?token))\s*[:=]\s*['"]?([a-zA-Z0-9_-]{32,64})['"]?"#)
                 .expect("Valid regex for CF-008"),
             "Never expose database credentials or connection strings to client-side browsers. Query databases via backend Worker APIs or Cloudflare Hyperdrive / D1 bindings.",
         ),
@@ -102,6 +102,72 @@ pub fn get_builtin_rules() -> Vec<Rule> {
                 .expect("Valid regex for CF-009"),
             "Review if this 40-character high-entropy token is a Cloudflare API token or private service credential.",
         ).with_min_entropy(3.8),
+
+        // CF-010: Cloudflare Hyperdrive Origin Credentials
+        Rule::new_regex(
+            "CF-010",
+            "Cloudflare Hyperdrive Secret / Connection String",
+            "Detects Hyperdrive connection strings or origin database passwords in client code",
+            Severity::Critical,
+            Regex::new(r#"(?i)(?:hyperdrive[-_]?(?:origin[-_]?key|password|secret|conn[-_]?string))\s*[:=]\s*['"]?([^\s'"`;]{8,128})['"]?"#)
+                .expect("Valid regex for CF-010"),
+            "Hyperdrive manages database pooling securely at the edge. Never embed database passwords in frontend code; bind Hyperdrive inside wrangler.jsonc instead.",
+        ),
+
+        // CF-011: Cloudflare Tunnel Token (cloudflared)
+        Rule::new_regex(
+            "CF-011",
+            "Cloudflare Tunnel Token",
+            "Detects Cloudflare Tunnel (cloudflared) enrollment tokens",
+            Severity::Critical,
+            Regex::new(r#"(?i)(?:tunnel[-_]?token|TUNNEL_TOKEN)\s*[:=]\s*['"]?(eyJh[a-zA-Z0-9_-]{60,250})['"]?|\b(eyJh[a-zA-Z0-9_-]{100,250})\b"#)
+                .expect("Valid regex for CF-011"),
+            "Tunnel tokens grant direct network ingress into your private origins and infrastructure. Store tunnel credentials securely on origin servers.",
+        ),
+
+        // CF-012: Cloudflare AI Gateway & LLM API Keys
+        Rule::new_regex(
+            "CF-012",
+            "Cloudflare AI Gateway Token / LLM API Key",
+            "Detects Cloudflare AI Gateway tokens, OpenAI, Anthropic, or Gemini API keys in client assets",
+            Severity::Critical,
+            Regex::new(r#"(?i)(?:cf[-_]?ai[-_]?(?:gateway[-_]?)?token|cf[-_]?ai[-_]?token)\s*[:=]\s*['"]?([a-zA-Z0-9_-]{32,64})['"]?|\b(sk-ant-[a-zA-Z0-9_-]{40,120}|sk-proj-[a-zA-Z0-9_-]{40,120}|AIzaSy[a-zA-Z0-9_-]{33})\b"#)
+                .expect("Valid regex for CF-012"),
+            "Proxy LLM calls through Cloudflare AI Gateway or backend Workers. Never expose model provider API keys in client-side JavaScript.",
+        ),
+
+        // CF-013: Cloudflare Vectorize Admin / Query Secret
+        Rule::new_regex(
+            "CF-013",
+            "Cloudflare Vectorize Secret",
+            "Detects Cloudflare Vectorize index secret keys or admin tokens",
+            Severity::Critical,
+            Regex::new(r#"(?i)(?:vectorize[-_]?(?:token|secret|admin[-_]?key))\s*[:=]\s*['"]?([a-zA-Z0-9_-]{32,64})['"]?"#)
+                .expect("Valid regex for CF-013"),
+            "Query Vectorize indexes via Worker bindings (env.VECTORIZE.query). Do not expose direct API management tokens.",
+        ),
+
+        // CF-014: Cloudflare Email Routing / Transactional Mail Key
+        Rule::new_regex(
+            "CF-014",
+            "Cloudflare Email / MailChannels API Secret",
+            "Detects MailChannels DKIM secrets or transactional email tokens in Worker scripts",
+            Severity::High,
+            Regex::new(r#"(?i)(?:mailchannels[-_]?(?:api[-_]?key|secret)|cf[-_]?email[-_]?(?:secret|token))\s*[:=]\s*['"]?([a-zA-Z0-9_-]{24,64})['"]?"#)
+                .expect("Valid regex for CF-014"),
+            "Keep transactional email credentials in Cloudflare Worker secrets (wrangler secret put).",
+        ),
+
+        // CF-015: TLS / SSL Private Key
+        Rule::new_regex(
+            "CF-015",
+            "TLS / SSL Private Key",
+            "Detects unencrypted RSA, EC, or OpenSSH private keys in static assets or source files",
+            Severity::Critical,
+            Regex::new(r#"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"#)
+                .expect("Valid regex for CF-015"),
+            "Private keys must never be committed to git repositories or served statically. Manage certificates via Cloudflare Origin CA or Key Management Service.",
+        ),
     ]
 }
 
@@ -128,7 +194,6 @@ mod tests {
         let key_rule = rules.iter().find(|r| r.id == "CF-002").unwrap();
         let re = key_rule.pattern.as_ref().unwrap();
 
-        // 37 hex characters
         let sample = "c2547eb745079dac9320b638f5e22594b678a";
         assert_eq!(sample.len(), 37);
         assert!(re.is_match(sample));
@@ -180,6 +245,36 @@ mod tests {
         let re = db_rule.pattern.as_ref().unwrap();
 
         let sample = "const dbUri = 'postgres://admin:SuperSecretPass123!@db.cloudflare.internal:5432/production';";
+        assert!(re.is_match(sample));
+    }
+
+    #[test]
+    fn test_tunnel_token_rule() {
+        let rules = get_builtin_rules();
+        let tunnel_rule = rules.iter().find(|r| r.id == "CF-011").unwrap();
+        let re = tunnel_rule.pattern.as_ref().unwrap();
+
+        let sample = "TUNNEL_TOKEN = 'eyJhIjoiYWJjZGVmMTIzNDU2IiwidCI6IjEyMzQtNTY3OC05MGFiIiwicyI6IlNvbWVTZWNyZXRLZXkxMjM0NTY3ODkwYWJjZGVmIn0='";
+        assert!(re.is_match(sample));
+    }
+
+    #[test]
+    fn test_ai_gateway_token_rule() {
+        let rules = get_builtin_rules();
+        let ai_rule = rules.iter().find(|r| r.id == "CF-012").unwrap();
+        let re = ai_rule.pattern.as_ref().unwrap();
+
+        let sample = "CF_AI_GATEWAY_TOKEN = 'abcdef1234567890abcdef1234567890'";
+        assert!(re.is_match(sample));
+    }
+
+    #[test]
+    fn test_tls_private_key_rule() {
+        let rules = get_builtin_rules();
+        let tls_rule = rules.iter().find(|r| r.id == "CF-015").unwrap();
+        let re = tls_rule.pattern.as_ref().unwrap();
+
+        let sample = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0";
         assert!(re.is_match(sample));
     }
 }
