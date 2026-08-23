@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flareguard — Unified Cloudflare Security & Architecture Guardian</title>
+  <meta name="description" content="High-performance Rust CLI & library providing AST secret scanning, Worker binding verification, Zone security posture auditing, and origin IP leak hunting.">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --void: #0a0a0a;
+      --charcoal: #121212;
+      --concrete: #262626;
+      --titanium: #ffffff;
+      --steel: #888888;
+      --cobalt: #3B82F6;
+      --cyan: #06B6D4;
+      --emerald: #10B981;
+      --crimson: #F43F5E;
+      --font-ui: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-radius: 0 !important;
+    }
+
+    body {
+      background-color: var(--void);
+      color: var(--titanium);
+      font-family: var(--font-ui);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    .grid-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      border-left: 1px solid var(--concrete);
+      border-right: 1px solid var(--concrete);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--concrete);
+      background: var(--void);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+    }
+
+    .brand-identity {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+      color: var(--titanium);
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      background: var(--titanium);
+      color: var(--void);
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: -1px;
+    }
+
+    .brand-meta {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .brand-title {
+      font-size: 0.72rem;
+      color: var(--steel);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+      gap: 1.5rem;
+    }
+
+    nav a {
+      color: var(--steel);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      transition: color 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    nav a:hover {
+      color: var(--titanium);
+    }
+
+    .hero {
+      padding: 4.5rem 2rem;
+      border-bottom: 1px solid var(--concrete);
+      background: linear-gradient(180deg, var(--charcoal) 0%, var(--void) 100%);
+    }
+
+    .tag-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 1.25rem;
+      border: 1px solid var(--concrete);
+      padding: 0.35rem 0.75rem;
+      background: var(--void);
+    }
+
+    .tag-strip .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--emerald);
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+
+    .lead {
+      font-size: 1.2rem;
+      color: var(--steel);
+      max-width: 850px;
+      margin-bottom: 2rem;
+    }
+
+    .cli-install {
+      background: var(--void);
+      border: 1px solid var(--concrete);
+      padding: 1rem 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      user-select: all;
+      color: var(--emerald);
+    }
+
+    .cli-install span.prefix {
+      color: var(--steel);
+    }
+
+    .section-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--concrete);
+      background: var(--charcoal);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--titanium);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      border-bottom: 1px solid var(--concrete);
+    }
+
+    .feature-card {
+      padding: 2.5rem 2rem;
+      border-right: 1px solid var(--concrete);
+      border-bottom: 1px solid var(--concrete);
+      background: var(--void);
+    }
+
+    .feature-idx {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--cobalt);
+      display: block;
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .feature-card h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card p {
+      color: var(--steel);
+      font-size: 0.92rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .code-block {
+      background: var(--charcoal);
+      border: 1px solid var(--concrete);
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--titanium);
+      overflow-x: auto;
+    }
+
+    footer {
+      margin-top: auto;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--concrete);
+      background: var(--void);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--steel);
+    }
+
+    footer a {
+      color: var(--titanium);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--cobalt);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-container">
+    <header>
+      <div class="nav-inner">
+        <a href="https://bhubbard.github.io/" class="brand-identity">
+          <div class="brand-mark">BH</div>
+          <div class="brand-meta">
+            <span class="brand-name">BRANDON HUBBARD</span>
+            <span class="brand-title">Engineering Specification</span>
+          </div>
+        </a>
+        <nav>
+          <ul>
+            <li><a href="https://bhubbard.github.io/">← All Tools</a></li>
+            <li><a href="https://github.com/bhubbard/flareguard" target="_blank">GitHub ↗</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="tag-strip">
+          <div class="dot"></div>
+          <span>SPECIFICATION // CLOUDFLARE SECURITY & INFRASTRUCTURE GUARDIAN</span>
+        </div>
+        <h1>flareguard</h1>
+        <p class="lead">The unified, high-performance Rust security auditor for Cloudflare. AST secret scanning, Worker binding verification, Zone posture auditing, and origin IP leak hunting in a single binary.</p>
+        
+        <div class="cli-install">
+          <span class="prefix">$</span> cargo install flareguard
+        </div>
+      </section>
+
+      <div class="section-header">
+        <span class="section-title">01. The 4 Unified Pillars</span>
+        <span class="section-title" style="color: var(--emerald);">RUST HIGH-PERFORMANCE ENGINE</span>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <span class="feature-idx" style="color: var(--cobalt);">[ Pillar 01 // Secrets ]</span>
+          <h3>flareguard secrets</h3>
+          <p>Scans static bundles, dist folders, and git history for leaked Cloudflare API Tokens, Global Keys, and Turnstile secrets.</p>
+          <div class="code-block">$ flareguard secrets dist/ --check</div>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-idx" style="color: var(--cyan);">[ Pillar 02 // Bindings ]</span>
+          <h3>flareguard bindings</h3>
+          <p>OXC JavaScript/TypeScript AST scanner that validates wrangler.jsonc bindings against actual code usage (D1, KV, R2, Vectorize).</p>
+          <div class="code-block">$ flareguard bindings src/ --strict</div>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-idx" style="color: var(--emerald);">[ Pillar 03 // Zone Posture ]</span>
+          <h3>flareguard zone</h3>
+          <p>Live security posture audit for Cloudflare zones: SSL/TLS Strict, HSTS, WAF Managed Rules, Bot Fight Mode, and DNSSEC.</p>
+          <div class="code-block">$ flareguard zone --zone example.com</div>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-idx" style="color: var(--crimson);">[ Pillar 04 // Origin Hunter ]</span>
+          <h3>flareguard origin</h3>
+          <p>Discovers unmasked backend origin IPs behind Cloudflare proxies via DNS SPF/MX records, CRT.sh logs, and HTTP probes.</p>
+          <div class="code-block">$ flareguard origin example.com --check</div>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div>
+        <span>© 2026 BRANDON HUBBARD. CODE AS CRAFT. RADICAL OWNERSHIP.</span>
+      </div>
+      <div>
+        <a href="https://github.com/bhubbard/flareguard">GitHub Repository</a>
+      </div>
+    </footer>
+  </div>
+
+</body>
+</html>
