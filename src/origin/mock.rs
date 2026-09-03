@@ -87,8 +87,12 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf1_lvl, conf1_score, conf1_reason) =
-        calculate_confidence(&baseline, &candidate1.source, std::slice::from_ref(&probe1), &[]);
+    let (conf1_lvl, conf1_score, conf1_reason) = calculate_confidence(
+        &baseline,
+        &candidate1.source,
+        std::slice::from_ref(&probe1),
+        &[],
+    );
 
     let finding1 = HunterFinding {
         candidate_ip: origin_ip,
@@ -146,8 +150,12 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf2_lvl, conf2_score, conf2_reason) =
-        calculate_confidence(&baseline, &candidate2.source, std::slice::from_ref(&probe2), &[]);
+    let (conf2_lvl, conf2_score, conf2_reason) = calculate_confidence(
+        &baseline,
+        &candidate2.source,
+        std::slice::from_ref(&probe2),
+        &[],
+    );
 
     let finding2 = HunterFinding {
         candidate_ip: dev_ip,
@@ -202,8 +210,12 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         }),
     };
 
-    let (conf3_lvl, conf3_score, conf3_reason) =
-        calculate_confidence(&baseline, &candidate3.source, std::slice::from_ref(&probe3), &[]);
+    let (conf3_lvl, conf3_score, conf3_reason) = calculate_confidence(
+        &baseline,
+        &candidate3.source,
+        std::slice::from_ref(&probe3),
+        &[],
+    );
 
     let finding3 = HunterFinding {
         candidate_ip: mail_ip,
@@ -247,8 +259,12 @@ pub fn run_mock_scan(domain: &str) -> ScanReport {
         match_details: None,
     };
 
-    let (conf4_lvl, conf4_score, conf4_reason) =
-        calculate_confidence(&baseline, &candidate4.source, &[], std::slice::from_ref(&failed_probe));
+    let (conf4_lvl, conf4_score, conf4_reason) = calculate_confidence(
+        &baseline,
+        &candidate4.source,
+        &[],
+        std::slice::from_ref(&failed_probe),
+    );
 
     let finding4 = HunterFinding {
         candidate_ip: spf_ip,

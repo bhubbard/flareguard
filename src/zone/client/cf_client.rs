@@ -92,26 +92,27 @@ impl CloudflareClient {
             }
 
             if let Some(filter) = zone_filter
-                && !filter.is_empty() {
-                    // Check if filter looks like a domain name vs zone ID (32 hex characters)
-                    if filter.len() == 32 && filter.chars().all(|c| c.is_ascii_hexdigit()) {
-                        // Zone ID
-                        let direct_url = format!("{}/zones/{}", self.base_url, filter);
-                        let resp = self.get_with_retry(&direct_url).await?;
-                        if !resp.status().is_success() {
-                            let text = resp.text().await.unwrap_or_default();
-                            bail!("Failed to fetch zone {}: {}", filter, text);
-                        }
-                        let envelope: ApiResponse<Zone> = resp.json().await?;
-                        if let Some(z) = envelope.result {
-                            return Ok(vec![z]);
-                        } else {
-                            return Ok(vec![]);
-                        }
-                    } else {
-                        url.push_str(&format!("&name={}", filter));
+                && !filter.is_empty()
+            {
+                // Check if filter looks like a domain name vs zone ID (32 hex characters)
+                if filter.len() == 32 && filter.chars().all(|c| c.is_ascii_hexdigit()) {
+                    // Zone ID
+                    let direct_url = format!("{}/zones/{}", self.base_url, filter);
+                    let resp = self.get_with_retry(&direct_url).await?;
+                    if !resp.status().is_success() {
+                        let text = resp.text().await.unwrap_or_default();
+                        bail!("Failed to fetch zone {}: {}", filter, text);
                     }
+                    let envelope: ApiResponse<Zone> = resp.json().await?;
+                    if let Some(z) = envelope.result {
+                        return Ok(vec![z]);
+                    } else {
+                        return Ok(vec![]);
+                    }
+                } else {
+                    url.push_str(&format!("&name={}", filter));
                 }
+            }
 
             let resp = self.get_with_retry(&url).await?;
             if !resp.status().is_success() {
@@ -209,12 +210,12 @@ impl CloudflareClient {
                             settings.security_header = Some(sh);
                         } else if let Some(obj) = item.value.as_object()
                             && let Some(sts) = obj.get("strict_transport_security")
-                                && let Ok(hsts) = serde_json::from_value::<HstsSetting>(sts.clone())
-                                {
-                                    settings.security_header = Some(SecurityHeaderSetting {
-                                        strict_transport_security: Some(hsts),
-                                    });
-                                }
+                            && let Ok(hsts) = serde_json::from_value::<HstsSetting>(sts.clone())
+                        {
+                            settings.security_header = Some(SecurityHeaderSetting {
+                                strict_transport_security: Some(hsts),
+                            });
+                        }
                     }
                     "security_level" => {
                         if let Some(v) = item.value.as_str() {
@@ -277,25 +278,27 @@ impl CloudflareClient {
         let pkg_url = format!("{}/zones/{}/firewall/waf/packages", self.base_url, zone_id);
         if let Ok(resp) = self.get_with_retry(&pkg_url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<Vec<WafPackage>>>().await
-                    && let Some(pkgs) = envelope.result
-                        && !pkgs.is_empty() {
-                            waf.waf_enabled = true;
-                            waf.managed_rules_active = true;
-                            waf.packages = pkgs;
-                        }
+            && let Ok(envelope) = resp.json::<ApiResponse<Vec<WafPackage>>>().await
+            && let Some(pkgs) = envelope.result
+            && !pkgs.is_empty()
+        {
+            waf.waf_enabled = true;
+            waf.managed_rules_active = true;
+            waf.packages = pkgs;
+        }
 
         // 2. Check Modern Rulesets
         let ruleset_url = format!("{}/zones/{}/rulesets", self.base_url, zone_id);
         if let Ok(resp) = self.get_with_retry(&ruleset_url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<Vec<RulesetInfo>>>().await
-                    && let Some(rulesets) = envelope.result
-                        && !rulesets.is_empty() {
-                            waf.waf_enabled = true;
-                            waf.managed_rules_active = true;
-                            waf.rulesets = rulesets;
-                        }
+            && let Ok(envelope) = resp.json::<ApiResponse<Vec<RulesetInfo>>>().await
+            && let Some(rulesets) = envelope.result
+            && !rulesets.is_empty()
+        {
+            waf.waf_enabled = true;
+            waf.managed_rules_active = true;
+            waf.rulesets = rulesets;
+        }
 
         Ok(waf)
     }
@@ -305,10 +308,11 @@ impl CloudflareClient {
         let url = format!("{}/zones/{}/bot_management", self.base_url, zone_id);
         if let Ok(resp) = self.get_with_retry(&url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<BotManagementSetting>>().await
-                    && let Some(bot) = envelope.result {
-                        return Ok(bot);
-                    }
+            && let Ok(envelope) = resp.json::<ApiResponse<BotManagementSetting>>().await
+            && let Some(bot) = envelope.result
+        {
+            return Ok(bot);
+        }
         Ok(BotManagementSetting::default())
     }
 
@@ -317,11 +321,12 @@ impl CloudflareClient {
         let url = format!("{}/zones/{}/rate_limits", self.base_url, zone_id);
         if let Ok(resp) = self.get_with_retry(&url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<Vec<RateLimitRule>>>().await {
-                    return Ok(RateLimitSetting {
-                        rules: envelope.result.unwrap_or_default(),
-                    });
-                }
+            && let Ok(envelope) = resp.json::<ApiResponse<Vec<RateLimitRule>>>().await
+        {
+            return Ok(RateLimitSetting {
+                rules: envelope.result.unwrap_or_default(),
+            });
+        }
         Ok(RateLimitSetting::default())
     }
 
@@ -330,11 +335,12 @@ impl CloudflareClient {
         let url = format!("{}/zones/{}/firewall/lockdowns", self.base_url, zone_id);
         if let Ok(resp) = self.get_with_retry(&url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<Vec<ZoneLockdownRule>>>().await {
-                    return Ok(ZoneLockdownSetting {
-                        rules: envelope.result.unwrap_or_default(),
-                    });
-                }
+            && let Ok(envelope) = resp.json::<ApiResponse<Vec<ZoneLockdownRule>>>().await
+        {
+            return Ok(ZoneLockdownSetting {
+                rules: envelope.result.unwrap_or_default(),
+            });
+        }
         Ok(ZoneLockdownSetting::default())
     }
 
@@ -346,11 +352,12 @@ impl CloudflareClient {
         );
         if let Ok(resp) = self.get_with_retry(&url).await
             && resp.status().is_success()
-                && let Ok(envelope) = resp.json::<ApiResponse<Vec<IpAccessRule>>>().await {
-                    return Ok(IpAccessRulesSetting {
-                        rules: envelope.result.unwrap_or_default(),
-                    });
-                }
+            && let Ok(envelope) = resp.json::<ApiResponse<Vec<IpAccessRule>>>().await
+        {
+            return Ok(IpAccessRulesSetting {
+                rules: envelope.result.unwrap_or_default(),
+            });
+        }
         Ok(IpAccessRulesSetting::default())
     }
 

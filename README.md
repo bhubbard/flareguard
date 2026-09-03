@@ -4,6 +4,8 @@
 > High-performance Rust CLI & library providing AST secret scanning, Worker binding verification, Zone security posture auditing, and origin IP leak hunting.
 
 [![CI](https://github.com/bhubbard/flareguard/actions/workflows/ci.yml/badge.svg)](https://github.com/bhubbard/flareguard/actions)
+[![crates.io](https://img.shields.io/crates/v/flareguard.svg)](https://crates.io/crates/flareguard)
+[![npm version](https://img.shields.io/npm/v/flareguard.svg)](https://www.npmjs.com/package/flareguard)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Pages](https://img.shields.io/badge/docs-bhubbard.github.io-blue)](https://bhubbard.github.io/flareguard)
 
@@ -44,8 +46,14 @@
 ## 🚀 Installation & Quickstart
 
 ```bash
-# Install via Cargo
+# Install via Cargo (Rust)
 cargo install flareguard
+
+# Or install globally via npm
+npm install -g flareguard
+
+# Or run directly via npx without installation
+npx flareguard --help
 
 # Or build from source
 git clone https://github.com/bhubbard/flareguard.git

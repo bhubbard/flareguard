@@ -1,0 +1,50 @@
+{
+  "name": "flareguard",
+  "version": "0.1.0",
+  "description": "Unified Cloudflare Security Guardian — AST secret scanning, Worker binding verification, Zone posture auditing, and origin IP leak hunting.",
+  "keywords": [
+    "cloudflare",
+    "security",
+    "waf",
+    "workers",
+    "cli",
+    "secrets",
+    "audit"
+  ],
+  "homepage": "https://bhubbard.github.io/flareguard",
+  "bugs": {
+    "url": "https://github.com/bhubbard/flareguard/issues"
+  },
+  "license": "MIT",
+  "author": "Brandon Hubbard <bkhubbard@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bhubbard/flareguard.git"
+  },
+  "bin": {
+    "flareguard": "bin/flareguard.js"
+  },
+  "files": [
+    "bin",
+    "scripts/postinstall.mjs",
+    "Cargo.toml",
+    "Cargo.lock",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "scripts": {
+    "build:cargo": "cargo build --release",
+    "postinstall": "node scripts/postinstall.mjs",
+    "prepare:publish": "node scripts/set-optional-deps.mjs",
+    "test": "cargo test"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "//optionalDependencies": [
+    "The @flareguard/* prebuilt-binary packages are attached at publish",
+    "time by scripts/set-optional-deps.mjs, not committed here."
+  ]
+}

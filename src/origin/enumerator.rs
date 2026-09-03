@@ -225,30 +225,31 @@ pub async fn enumerate_candidate_ips(
 
     // 4. Certificate Transparency Logs (crt.sh)
     if options.enable_crtsh
-        && let Ok(sans) = query_crtsh(http_client, &root, options.timeout_secs).await {
-            let stream = stream::iter(sans).map(|san| {
-                let res = resolver.clone();
-                async move {
-                    let ips = resolve_ips(&res, &san).await.unwrap_or_default();
-                    (san, ips)
-                }
-            });
+        && let Ok(sans) = query_crtsh(http_client, &root, options.timeout_secs).await
+    {
+        let stream = stream::iter(sans).map(|san| {
+            let res = resolver.clone();
+            async move {
+                let ips = resolve_ips(&res, &san).await.unwrap_or_default();
+                (san, ips)
+            }
+        });
 
-            let mut buffered = stream.buffer_unordered(options.concurrency.max(1));
-            while let Some((san, ips)) = buffered.next().await {
-                for ip in ips {
-                    if !is_cloudflare_ip(&ip) {
-                        candidate_map.entry(ip).or_insert_with(|| CandidateIp {
-                            ip,
-                            source: DiscoverySource::CertificateTransparency(san.clone()),
-                            hostname: Some(san.clone()),
-                            is_cloudflare: false,
-                            notes: vec![format!("crt.sh SAN {} resolved to unmasked IP", san)],
-                        });
-                    }
+        let mut buffered = stream.buffer_unordered(options.concurrency.max(1));
+        while let Some((san, ips)) = buffered.next().await {
+            for ip in ips {
+                if !is_cloudflare_ip(&ip) {
+                    candidate_map.entry(ip).or_insert_with(|| CandidateIp {
+                        ip,
+                        source: DiscoverySource::CertificateTransparency(san.clone()),
+                        hostname: Some(san.clone()),
+                        is_cloudflare: false,
+                        notes: vec![format!("crt.sh SAN {} resolved to unmasked IP", san)],
+                    });
                 }
             }
         }
+    }
 
     let mut result: Vec<CandidateIp> = candidate_map.into_values().collect();
     result.sort_by_key(|c| c.ip);

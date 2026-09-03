@@ -176,79 +176,78 @@ pub fn evaluate_zone(data: &ZoneAuditData) -> ZoneAuditReport {
         if !hsts_enabled { 20 } else { 0 }
     );
 
-    if hsts_enabled
-        && let Some(hsts) = hsts_opt {
-            let max_age = hsts.max_age.unwrap_or(0);
-            let six_months = 15_552_000u64;
-            let one_year = 31_536_000u64;
+    if hsts_enabled && let Some(hsts) = hsts_opt {
+        let max_age = hsts.max_age.unwrap_or(0);
+        let six_months = 15_552_000u64;
+        let one_year = 31_536_000u64;
 
-            if max_age < six_months {
-                check!(
-                    "CF-HSTS-002",
-                    false,
-                    format!(
-                        "{} seconds (~{:.1} months)",
-                        max_age,
-                        (max_age as f64) / 2_592_000.0
-                    ),
-                    ">= 15,552,000 seconds (6 months)",
-                    Some(RiskLevel::Medium),
-                    10
-                );
-            } else if max_age < one_year {
-                check!(
-                    "CF-HSTS-002",
-                    false,
-                    format!(
-                        "{} seconds (~{:.1} months)",
-                        max_age,
-                        (max_age as f64) / 2_592_000.0
-                    ),
-                    ">= 31,536,000 seconds (1 year / Preload ready)",
-                    Some(RiskLevel::Low),
-                    5
-                );
-            } else {
-                check!(
-                    "CF-HSTS-002",
-                    true,
-                    format!("{}s", max_age),
-                    ">= 15,552,000s",
-                    None,
-                    0
-                );
-            }
-
-            let subdomains = hsts.include_subdomains.unwrap_or(false);
+        if max_age < six_months {
             check!(
-                "CF-HSTS-003",
-                subdomains,
-                if subdomains { "true" } else { "false" },
-                "true",
+                "CF-HSTS-002",
+                false,
+                format!(
+                    "{} seconds (~{:.1} months)",
+                    max_age,
+                    (max_age as f64) / 2_592_000.0
+                ),
+                ">= 15,552,000 seconds (6 months)",
                 Some(RiskLevel::Medium),
-                if !subdomains { 10 } else { 0 }
+                10
             );
-
-            let preload = hsts.preload.unwrap_or(false);
+        } else if max_age < one_year {
             check!(
-                "CF-HSTS-004",
-                preload,
-                if preload { "true" } else { "false" },
-                "true",
+                "CF-HSTS-002",
+                false,
+                format!(
+                    "{} seconds (~{:.1} months)",
+                    max_age,
+                    (max_age as f64) / 2_592_000.0
+                ),
+                ">= 31,536,000 seconds (1 year / Preload ready)",
                 Some(RiskLevel::Low),
-                if !preload { 5 } else { 0 }
+                5
             );
-
-            let nosniff = hsts.nosniff.unwrap_or(false);
+        } else {
             check!(
-                "CF-HSTS-005",
-                nosniff,
-                if nosniff { "true" } else { "false" },
-                "true",
-                Some(RiskLevel::Low),
-                if !nosniff { 5 } else { 0 }
+                "CF-HSTS-002",
+                true,
+                format!("{}s", max_age),
+                ">= 15,552,000s",
+                None,
+                0
             );
         }
+
+        let subdomains = hsts.include_subdomains.unwrap_or(false);
+        check!(
+            "CF-HSTS-003",
+            subdomains,
+            if subdomains { "true" } else { "false" },
+            "true",
+            Some(RiskLevel::Medium),
+            if !subdomains { 10 } else { 0 }
+        );
+
+        let preload = hsts.preload.unwrap_or(false);
+        check!(
+            "CF-HSTS-004",
+            preload,
+            if preload { "true" } else { "false" },
+            "true",
+            Some(RiskLevel::Low),
+            if !preload { 5 } else { 0 }
+        );
+
+        let nosniff = hsts.nosniff.unwrap_or(false);
+        check!(
+            "CF-HSTS-005",
+            nosniff,
+            if nosniff { "true" } else { "false" },
+            "true",
+            Some(RiskLevel::Low),
+            if !nosniff { 5 } else { 0 }
+        );
+    }
 
     // 7. WAF & Managed Rules (CF-WAF-001)
     let waf_active = data.waf.waf_enabled

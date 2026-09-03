@@ -263,14 +263,15 @@ impl<'a> AstScanner<'a> {
                         }
                     }
                 } else if is_process_env(init)
-                    && let BindingPattern::ObjectPattern(obj) = &declarator.id {
-                        for prop in &obj.properties {
-                            if let Some(name) = prop.key.name() {
-                                let raw = format!("const {{ {} }} = process.env", name);
-                                self.record_access(&name, prop.span, AccessKind::ProcessEnv, &raw);
-                            }
+                    && let BindingPattern::ObjectPattern(obj) = &declarator.id
+                {
+                    for prop in &obj.properties {
+                        if let Some(name) = prop.key.name() {
+                            let raw = format!("const {{ {} }} = process.env", name);
+                            self.record_access(&name, prop.span, AccessKind::ProcessEnv, &raw);
                         }
                     }
+                }
 
                 match init {
                     Expression::ArrowFunctionExpression(f) => {
@@ -391,11 +392,12 @@ impl<'a> AstScanner<'a> {
                         return;
                     }
                 } else if is_process_env(&m.object)
-                    && let Some(prop_name) = extract_string_literal(&m.expression) {
-                        let raw = format!("process.env[\"{}\"]", prop_name);
-                        self.record_access(&prop_name, m.span, AccessKind::ProcessEnv, &raw);
-                        return;
-                    }
+                    && let Some(prop_name) = extract_string_literal(&m.expression)
+                {
+                    let raw = format!("process.env[\"{}\"]", prop_name);
+                    self.record_access(&prop_name, m.span, AccessKind::ProcessEnv, &raw);
+                    return;
+                }
                 self.walk_expression(&m.object);
                 self.walk_expression(&m.expression);
             }
@@ -408,16 +410,12 @@ impl<'a> AstScanner<'a> {
                         // Check if object is `c` (Hono context) or `env`
                         if (is_ident_name(&m.object, "c") || is_env_source(&m.object).is_some())
                             && let Some(first_arg) = call.arguments.first()
-                                && let Some(arg_expr) = first_arg.as_expression()
-                                    && let Some(key_name) = extract_string_literal(arg_expr) {
-                                        let raw = format!("c.get('{}')", key_name);
-                                        self.record_access(
-                                            &key_name,
-                                            call.span,
-                                            AccessKind::HelperCall,
-                                            &raw,
-                                        );
-                                    }
+                            && let Some(arg_expr) = first_arg.as_expression()
+                            && let Some(key_name) = extract_string_literal(arg_expr)
+                        {
+                            let raw = format!("c.get('{}')", key_name);
+                            self.record_access(&key_name, call.span, AccessKind::HelperCall, &raw);
+                        }
                     }
                 }
 
@@ -442,23 +440,18 @@ impl<'a> AstScanner<'a> {
             // Assignment expression: ({ MY_KV } = env)
             Expression::AssignmentExpression(assign) => {
                 if let Some(env_expr_str) = is_env_source(&assign.right)
-                    && let AssignmentTarget::ObjectAssignmentTarget(obj) = &assign.left {
-                        for prop in &obj.properties {
-                            if let AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(
-                                ident,
-                            ) = prop
-                            {
-                                let name = ident.binding.name.as_str();
-                                let raw = format!("({{ {} }} = {})", name, env_expr_str);
-                                self.record_access(
-                                    name,
-                                    ident.span,
-                                    AccessKind::Destructured,
-                                    &raw,
-                                );
-                            }
+                    && let AssignmentTarget::ObjectAssignmentTarget(obj) = &assign.left
+                {
+                    for prop in &obj.properties {
+                        if let AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(ident) =
+                            prop
+                        {
+                            let name = ident.binding.name.as_str();
+                            let raw = format!("({{ {} }} = {})", name, env_expr_str);
+                            self.record_access(name, ident.span, AccessKind::Destructured, &raw);
                         }
                     }
+                }
                 self.walk_expression(&assign.right);
             }
 
@@ -662,11 +655,12 @@ impl<'a> AstScanner<'a> {
                         return;
                     }
                 } else if is_process_env(&c.object)
-                    && let Some(prop_name) = extract_string_literal(&c.expression) {
-                        let raw = format!("process.env[\"{}\"]", prop_name);
-                        self.record_access(&prop_name, c.span, AccessKind::ProcessEnv, &raw);
-                        return;
-                    }
+                    && let Some(prop_name) = extract_string_literal(&c.expression)
+                {
+                    let raw = format!("process.env[\"{}\"]", prop_name);
+                    self.record_access(&prop_name, c.span, AccessKind::ProcessEnv, &raw);
+                    return;
+                }
                 self.walk_expression(&c.object);
                 self.walk_expression(&c.expression);
             }
@@ -794,22 +788,22 @@ pub fn scan_astro_content(
         && let Some(second_fence_offset) = lines[first_fence + 1..]
             .iter()
             .position(|l| l.trim() == "---")
-        {
-            let second_fence = first_fence + 1 + second_fence_offset;
+    {
+        let second_fence = first_fence + 1 + second_fence_offset;
 
-            // Build padded source so line numbers match the .astro file exactly
-            let mut padded_script = String::new();
-            for _ in 0..first_fence + 1 {
-                padded_script.push('\n');
-            }
-            for line in lines.iter().take(second_fence).skip(first_fence + 1) {
-                padded_script.push_str(line);
-                padded_script.push('\n');
-            }
-
-            let fm_accesses = scan_code_content(file_path, &padded_script, SourceType::ts())?;
-            all_accesses.extend(fm_accesses);
+        // Build padded source so line numbers match the .astro file exactly
+        let mut padded_script = String::new();
+        for _ in 0..first_fence + 1 {
+            padded_script.push('\n');
         }
+        for line in lines.iter().take(second_fence).skip(first_fence + 1) {
+            padded_script.push_str(line);
+            padded_script.push('\n');
+        }
+
+        let fm_accesses = scan_code_content(file_path, &padded_script, SourceType::ts())?;
+        all_accesses.extend(fm_accesses);
+    }
 
     // 2. Extract <script> tags
     let mut script_start = 0;

@@ -462,19 +462,20 @@ impl ZoneDataProvider for MockZoneProvider {
     ) -> Pin<Box<dyn Future<Output = Result<Vec<ZoneAuditData>>> + Send + 'a>> {
         Box::pin(async move {
             if let Some(filter) = zone_filter
-                && !filter.is_empty() {
-                    let filtered: Vec<ZoneAuditData> = self
-                        .zones
-                        .iter()
-                        .filter(|z| {
-                            z.zone.name.eq_ignore_ascii_case(filter)
-                                || z.zone.id.eq_ignore_ascii_case(filter)
-                                || z.zone.name.to_lowercase().contains(&filter.to_lowercase())
-                        })
-                        .cloned()
-                        .collect();
-                    return Ok(filtered);
-                }
+                && !filter.is_empty()
+            {
+                let filtered: Vec<ZoneAuditData> = self
+                    .zones
+                    .iter()
+                    .filter(|z| {
+                        z.zone.name.eq_ignore_ascii_case(filter)
+                            || z.zone.id.eq_ignore_ascii_case(filter)
+                            || z.zone.name.to_lowercase().contains(&filter.to_lowercase())
+                    })
+                    .cloned()
+                    .collect();
+                return Ok(filtered);
+            }
             Ok(self.zones.clone())
         })
     }

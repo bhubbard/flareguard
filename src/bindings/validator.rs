@@ -53,9 +53,10 @@ pub fn discover_source_files(paths: &[PathBuf]) -> Vec<PathBuf> {
     for p in paths {
         if p.is_file() {
             if let Some(ext) = p.extension().and_then(|e| e.to_str())
-                && supported_exts.contains(&ext) {
-                    files.push(p.clone());
-                }
+                && supported_exts.contains(&ext)
+            {
+                files.push(p.clone());
+            }
             continue;
         }
 
@@ -76,9 +77,10 @@ pub fn discover_source_files(paths: &[PathBuf]) -> Vec<PathBuf> {
                 if entry.file_type().is_file() {
                     let path = entry.path();
                     if let Some(ext) = path.extension().and_then(|e| e.to_str())
-                        && supported_exts.contains(&ext) {
-                            files.push(path.to_path_buf());
-                        }
+                        && supported_exts.contains(&ext)
+                    {
+                        files.push(path.to_path_buf());
+                    }
                 }
             }
         }

@@ -236,19 +236,20 @@ pub fn extract_bindings_from_object(
                 }
             }
         } else if let Some(v_obj) = vecs.as_object()
-            && let Some(binding) = v_obj.get("binding").and_then(|b| b.as_str()) {
-                let idx = v_obj
-                    .get("index_name")
-                    .and_then(|n| n.as_str())
-                    .map(|s| format!("index: {}", s));
-                bindings.push(DeclaredBinding {
-                    name: binding.to_string(),
-                    binding_type: BindingType::Vectorize,
-                    file: file_path.to_string(),
-                    environment: env_name.to_string(),
-                    details: idx,
-                });
-            }
+            && let Some(binding) = v_obj.get("binding").and_then(|b| b.as_str())
+        {
+            let idx = v_obj
+                .get("index_name")
+                .and_then(|n| n.as_str())
+                .map(|s| format!("index: {}", s));
+            bindings.push(DeclaredBinding {
+                name: binding.to_string(),
+                binding_type: BindingType::Vectorize,
+                file: file_path.to_string(),
+                environment: env_name.to_string(),
+                details: idx,
+            });
+        }
     }
 
     // 6. hyperdrive
@@ -313,47 +314,49 @@ pub fn extract_bindings_from_object(
 
     // 9. durable_objects
     if let Some(do_val) = obj.get("durable_objects").and_then(|d| d.as_object())
-        && let Some(bindings_arr) = do_val.get("bindings").and_then(|b| b.as_array()) {
-            for b in bindings_arr {
-                let name = b
-                    .get("name")
-                    .or_else(|| b.get("binding"))
-                    .and_then(|n| n.as_str());
-                if let Some(binding_name) = name {
-                    let cls = b
-                        .get("class_name")
-                        .and_then(|c| c.as_str())
-                        .map(|s| format!("class: {}", s));
-                    bindings.push(DeclaredBinding {
-                        name: binding_name.to_string(),
-                        binding_type: BindingType::DurableObject,
-                        file: file_path.to_string(),
-                        environment: env_name.to_string(),
-                        details: cls,
-                    });
-                }
+        && let Some(bindings_arr) = do_val.get("bindings").and_then(|b| b.as_array())
+    {
+        for b in bindings_arr {
+            let name = b
+                .get("name")
+                .or_else(|| b.get("binding"))
+                .and_then(|n| n.as_str());
+            if let Some(binding_name) = name {
+                let cls = b
+                    .get("class_name")
+                    .and_then(|c| c.as_str())
+                    .map(|s| format!("class: {}", s));
+                bindings.push(DeclaredBinding {
+                    name: binding_name.to_string(),
+                    binding_type: BindingType::DurableObject,
+                    file: file_path.to_string(),
+                    environment: env_name.to_string(),
+                    details: cls,
+                });
             }
         }
+    }
 
     // 10. queues (producers)
     if let Some(queues) = obj.get("queues").and_then(|q| q.as_object())
-        && let Some(producers) = queues.get("producers").and_then(|p| p.as_array()) {
-            for p in producers {
-                if let Some(binding) = p.get("binding").and_then(|b| b.as_str()) {
-                    let q_name = p
-                        .get("queue")
-                        .and_then(|q| q.as_str())
-                        .map(|s| format!("queue: {}", s));
-                    bindings.push(DeclaredBinding {
-                        name: binding.to_string(),
-                        binding_type: BindingType::QueueProducer,
-                        file: file_path.to_string(),
-                        environment: env_name.to_string(),
-                        details: q_name,
-                    });
-                }
+        && let Some(producers) = queues.get("producers").and_then(|p| p.as_array())
+    {
+        for p in producers {
+            if let Some(binding) = p.get("binding").and_then(|b| b.as_str()) {
+                let q_name = p
+                    .get("queue")
+                    .and_then(|q| q.as_str())
+                    .map(|s| format!("queue: {}", s));
+                bindings.push(DeclaredBinding {
+                    name: binding.to_string(),
+                    binding_type: BindingType::QueueProducer,
+                    file: file_path.to_string(),
+                    environment: env_name.to_string(),
+                    details: q_name,
+                });
             }
         }
+    }
 
     // 11. workflows
     if let Some(wfs) = obj.get("workflows").and_then(|w| w.as_array()) {
@@ -491,19 +494,20 @@ pub fn extract_bindings_from_object(
 
     // 17. assets
     if let Some(assets_val) = obj.get("assets").and_then(|a| a.as_object())
-        && let Some(binding) = assets_val.get("binding").and_then(|b| b.as_str()) {
-            let dir = assets_val
-                .get("directory")
-                .and_then(|d| d.as_str())
-                .map(|s| format!("dir: {}", s));
-            bindings.push(DeclaredBinding {
-                name: binding.to_string(),
-                binding_type: BindingType::Assets,
-                file: file_path.to_string(),
-                environment: env_name.to_string(),
-                details: dir,
-            });
-        }
+        && let Some(binding) = assets_val.get("binding").and_then(|b| b.as_str())
+    {
+        let dir = assets_val
+            .get("directory")
+            .and_then(|d| d.as_str())
+            .map(|s| format!("dir: {}", s));
+        bindings.push(DeclaredBinding {
+            name: binding.to_string(),
+            binding_type: BindingType::Assets,
+            file: file_path.to_string(),
+            environment: env_name.to_string(),
+            details: dir,
+        });
+    }
 
     // 18. secrets (if defined as array of secret names)
     if let Some(secrets) = obj.get("secrets").and_then(|s| s.as_array()) {

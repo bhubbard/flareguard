@@ -10,32 +10,35 @@ pub fn calculate_confidence(
     // 1. Check for exact probe match (CONFIRMED - 100%)
     for probe in successful_probes {
         if let Some(ref match_details) = probe.match_details
-            && match_details.exact_body_hash_match {
-                return (
-                    ConfidenceLevel::Confirmed,
-                    100,
-                    format!(
-                        "Exact SHA-256 body hash match on direct HTTP/HTTPS probe (port {}). Backend returned identical payload bypassing Cloudflare edge.",
-                        probe.port
-                    ),
-                );
-            }
+            && match_details.exact_body_hash_match
+        {
+            return (
+                ConfidenceLevel::Confirmed,
+                100,
+                format!(
+                    "Exact SHA-256 body hash match on direct HTTP/HTTPS probe (port {}). Backend returned identical payload bypassing Cloudflare edge.",
+                    probe.port
+                ),
+            );
+        }
     }
 
     // 2. Check for title match and header similarities (HIGH - 85%)
     for probe in successful_probes {
         if let Some(ref match_details) = probe.match_details
-            && match_details.title_match && !match_details.cf_ray_present {
-                let baseline_title = baseline.html_title.as_deref().unwrap_or("N/A");
-                return (
-                    ConfidenceLevel::High,
-                    85,
-                    format!(
-                        "HTML title matches target baseline ('{}') without Cloudflare proxy headers on port {}.",
-                        baseline_title, probe.port
-                    ),
-                );
-            }
+            && match_details.title_match
+            && !match_details.cf_ray_present
+        {
+            let baseline_title = baseline.html_title.as_deref().unwrap_or("N/A");
+            return (
+                ConfidenceLevel::High,
+                85,
+                format!(
+                    "HTML title matches target baseline ('{}') without Cloudflare proxy headers on port {}.",
+                    baseline_title, probe.port
+                ),
+            );
+        }
     }
 
     // 3. Check for direct subdomain origin bypass (HIGH - 80-85%)
@@ -52,17 +55,18 @@ pub fn calculate_confidence(
                 );
             }
         }
-        DiscoverySource::CertificateTransparency(san) if is_high_value_subdomain(san)
-            && !successful_probes.is_empty() => {
-                return (
-                    ConfidenceLevel::High,
-                    80,
-                    format!(
-                        "Certificate Transparency SAN ('{}') points to unmasked IP with active web service.",
-                        san
-                    ),
-                );
-            }
+        DiscoverySource::CertificateTransparency(san)
+            if is_high_value_subdomain(san) && !successful_probes.is_empty() =>
+        {
+            return (
+                ConfidenceLevel::High,
+                80,
+                format!(
+                    "Certificate Transparency SAN ('{}') points to unmasked IP with active web service.",
+                    san
+                ),
+            );
+        }
         _ => {}
     }
 
@@ -134,17 +138,16 @@ pub fn calculate_confidence(
                 );
             }
         }
-        DiscoverySource::HistoricalDns(src)
-            if !successful_probes.is_empty() => {
-                return (
-                    ConfidenceLevel::Medium,
-                    65,
-                    format!(
-                        "Historical DNS record ('{}') resolves to active HTTP server.",
-                        src
-                    ),
-                );
-            }
+        DiscoverySource::HistoricalDns(src) if !successful_probes.is_empty() => {
+            return (
+                ConfidenceLevel::Medium,
+                65,
+                format!(
+                    "Historical DNS record ('{}') resolves to active HTTP server.",
+                    src
+                ),
+            );
+        }
         _ => {}
     }
 

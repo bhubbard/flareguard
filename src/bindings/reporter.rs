@@ -226,8 +226,8 @@ pub fn render_text_report(report: &ValidationReport) -> io::Result<()> {
 
 /// Render JSON format.
 pub fn render_json_report(report: &ValidationReport) -> io::Result<()> {
-    let json_str = serde_json::to_string_pretty(report)
-        .map_err(|e| io::Error::other(e.to_string()))?;
+    let json_str =
+        serde_json::to_string_pretty(report).map_err(|e| io::Error::other(e.to_string()))?;
     println!("{}", json_str);
     Ok(())
 }
