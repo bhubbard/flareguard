@@ -7,7 +7,7 @@
 [![crates.io](https://img.shields.io/crates/v/flareguard.svg)](https://crates.io/crates/flareguard)
 [![npm version](https://img.shields.io/npm/v/flareguard.svg)](https://www.npmjs.com/package/flareguard)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub Pages](https://img.shields.io/badge/docs-bhubbard.github.io-blue)](https://bhubbard.github.io/flareguard)
+[![GitHub Pages](https://img.shields.io/badge/docs-bhubbard.github.io-blue)](https://code.brandonhubbard.com/flareguard/)
 
 ---
 
